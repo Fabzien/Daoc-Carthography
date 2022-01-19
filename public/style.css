@@ -1,0 +1,19 @@
+body {
+  padding: 0;
+  margin: 0;
+}
+
+html, body, #map {
+  height: 100%;
+  width: 100%;
+}
+
+#footer {
+  height: 1000px;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100vh;
+  background-color: black;
+}
