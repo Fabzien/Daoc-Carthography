@@ -41,3 +41,12 @@ More to come soon
 
 ## License
 The Expo source code is made available under the [MIT license](LICENSE).
+
+## Donation
+Donations are welcome and will go towards further development of this project.
+
+    BTC: bc1qg3dg84fh0qv7acax9c0txtsdasy33ga5jn0gd4
+    LTC: LNBL4kfX9GUsE5WgkZTyqeMS5r9vyKBazV
+    XMR: 47MEfu5NsRjdkyMGv2yhBLSLDkjHaTRUhVm2KTMq9kTwD4beDMU3wzbCQ6rJACEXpfjMxnS3uxK5DKw1i6R2KTuZPkoXoqg
+
+*Thank you for your support and generosity!*
