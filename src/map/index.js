@@ -65,15 +65,13 @@ function CleanMarkers() {
 
 class Map extends Component {
     render() {
-        const {
-            REACT_APP_MAP_ALBION_CLASSIC,
-            REACT_APP_MAP_ALBION_SI,
-            REACT_APP_MAP_HIBERNIAN_CLASSIC,
-            REACT_APP_MAP_HIBERNIAN_SI,
-            REACT_APP_MAP_MIDGARD_CLASSIC,
-            REACT_APP_MAP_MIDGARD_SI,
-            REACT_APP_MAP_FRONTIERS
-        } = process.env;
+        const REACT_APP_MAP_ALBION_CLASSIC = "/maps/albion/classic/tiles/{z}/{x}/{y}.png"
+        const REACT_APP_MAP_ALBION_SI = "/maps/albion/SI/tiles/{z}/{x}/{y}.png"
+        const REACT_APP_MAP_HIBERNIAN_CLASSIC ="/maps/hibernian/classic/tiles/{z}/{x}/{y}.png"
+        const REACT_APP_MAP_HIBERNIAN_SI = "/maps/hibernian/SI/tiles/{z}/{x}/{y}.png"
+        const REACT_APP_MAP_MIDGARD_CLASSIC = "/maps/midgard/classic/tiles/{z}/{x}/{y}.png"
+        const REACT_APP_MAP_MIDGARD_SI = "/maps/midgard/SI/tiles/{z}/{x}/{y}.png"
+        const REACT_APP_MAP_FRONTIERS = "/maps/frontiers/tiles/{z}/{x}/{y}.png"
         return (
             <div>
                 <MapContainer
