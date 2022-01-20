@@ -11,13 +11,15 @@ import {
 function App() {
   return (
     <div className="App">
-            <Map />
+      <Map />
+      <footer class="footer flex-style">
+        <a href=
+          "https://github.com/Fabzien/Daoc-Carthography"
+          target="_blank"> <img src="assets/GitHub-Mark-Light-32px.png" />
+        </a>
+      </footer>
     </div>
   );
-}
-
-function Test() {
-  return <h2>Home</h2>;
 }
 
 export default App;

@@ -81,7 +81,7 @@ class Map extends Component {
                     maxZoom={7}
                     onClick={this.handleClick}
                     doubleClickZoom={false}
-                    crs={CRS.Simple}
+                    crs={CRS.Simple}                   
                 >
                     <LayersControl position="bottomright">
                         <LayersControl.BaseLayer checked name="Albion-Classic">

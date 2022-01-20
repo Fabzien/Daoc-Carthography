@@ -8,12 +8,32 @@ html, body, #map {
   width: 100%;
 }
 
-#footer {
-  height: 1000px;
-}
-
 .leaflet-container {
   width: 100%;
   height: 100vh;
   background-color: black;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 10px;
+  padding-bottom: 8px;
+}
+.footer a {
+  padding: 0 5px 0 5px;
+  color: white;
+  cursor: pointer;
+}
+
+.flex-style {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
