@@ -18,22 +18,6 @@ const imageEntrance = new Icon({
     // popupAnchor: [-3, -76]// point from which the popup should open relative to the iconAnchor
 })
 
-export const entrancesMidgardSI =
-    [
-        {
-            name: 'Tuscaren Glacier (50+)',
-            loc: [-25.557752680816943, 149.76726191892536]
-        },
-        {
-            name: 'Trollheim (?)',
-            loc: [-32.75957020298573, 56.717753643979876]
-        },
-        {
-            name: 'Iarnvidiur\'s Lair (45-50+)',
-            loc: [-185.0167947799986, 171.14453644180026]
-        },
-    ]
-
 class EntrancesMarkers extends Component {
     static propTypes = {
         mapControls: PropTypes.object.isRequired,
@@ -50,22 +34,22 @@ class EntrancesMarkers extends Component {
                 entrances = []
                 break
             case 'Albion-Classic':
-                entrances = server.Entrances['Albion-Classic']
+                entrances = server.World['Albion-Classic'].Entrances
                 break
             case 'Albion-SI':
-                entrances = server.Entrances['Albion-SI']
+                entrances = server.World['Albion-SI'].Entrances
                 break
             case 'Hibernian-Classic':
-                entrances = server.Entrances['Hibernian-Classic']
+                entrances = server.World['Hibernian-Classic'].Entrances
                 break
             case 'Hibernian-SI':
-                entrances = server.Entrances['Hibernian-SI']
+                entrances = server.Wolrd['Hibernian-SI'].Entrances
                 break
             case 'Midgard-Classic':
-                entrances = server.Entrances['Midgard-Classic']
+                entrances = server.Wolrd['Midgard-Classic'].Entrances
                 break
             case 'Midgard-SI':
-                entrances = server.Entrances['Midgard-SI']
+                entrances = server.Wolrd['Midgard-SI'].Entrances
                 break
         }
         console.log(entrances)

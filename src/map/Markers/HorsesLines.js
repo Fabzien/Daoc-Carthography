@@ -208,26 +208,6 @@ const redOptions = {
     opacity: 0.8
 }
 
-// const test = [
-//     [-2.2736586045526366, 110.84262365685467],
-//     [-3.476309157232462, 109.51212983378491],
-// ]
-
-// function ClosePopUp() {
-//     useMapEvents({
-//         on(e) {
-//             console.log(e.name)
-//             store.dispatch({ type: 'RECEIVE_MOBS_RESULTS', mobsResults: [] });
-//             store.dispatch(
-//                 updateRegionInput({
-//                     regionValue: e.name
-//                 })
-//             );
-//         },
-//     })
-//     return null
-// }
-
 class HorsesLines extends Component {
     static propTypes = {
         mapControls: PropTypes.object.isRequired,
@@ -236,16 +216,6 @@ class HorsesLines extends Component {
     state = {
         lines: []
     };
-
-
-    // componentDidMount() {
-    //     this.fetchData();
-    // }
-
-
-    // test() {
-    //     console.log("test close")
-    // }
 
     render() {
         const region = this.props.mapControls.region
