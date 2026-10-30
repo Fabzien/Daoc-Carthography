@@ -55,12 +55,13 @@ describe('buildRegionData', () => {
         mobs: [
           mob({ Name: 'wolf' }),
           mob({ Name: 'Raguel', Guild: 'Armor Merchant', Realm: 1, ClassType: 'DOL.GS.GameMerchant' }),
-          mob({ Name: 'Barkeep', Realm: 1 }),
+          mob({ Name: 'Barkeep', Guild: null, Realm: 1 }),
         ],
       }),
       'test',
     )
     expect(data.mobs.map(([name]) => name)).toEqual(['wolf'])
+    expect(data.npcs[1].title).toBe('')
     expect(data.npcs.map((n) => [n.name, n.kind])).toEqual([
       ['Raguel', 'merchant'],
       ['Barkeep', 'other'],

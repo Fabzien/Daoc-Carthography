@@ -1,54 +1,61 @@
-import { Suspense, useState, type ComponentType } from 'react'
-import { CRS, type LatLng } from 'leaflet'
-import { LayerGroup, LayersControl, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet'
-import { DEFAULT_REGION, isRegionName, REGIONS } from '../data/regions'
-import { useMapStore } from '../store'
+import { Suspense, useEffect, type ComponentType } from 'react'
+import { CRS, latLngBounds } from 'leaflet'
+import { MapContainer, Pane, TileLayer, useMap, useMapEvents, ZoomControl } from 'react-leaflet'
+import { useRegionData } from '../data/regionData'
+import { REGIONS } from '../data/regions'
+import { useMapStore, type LayerKey } from '../store'
 import BindPointsOverlay from './overlays/BindPointsOverlay'
 import EntrancesOverlay from './overlays/EntrancesOverlay'
 import MobsOverlay from './overlays/MobsOverlay'
 import NpcsOverlay from './overlays/NpcsOverlay'
 import RoutesOverlay from './overlays/RoutesOverlay'
+import SelectionOverlay from './overlays/SelectionOverlay'
 import ZonesOverlay from './overlays/ZonesOverlay'
 
-// Toggleable layers, all fed by the current region's generated data file.
-const OVERLAYS: { name: string; checked: boolean; Component: ComponentType }[] = [
-  { name: 'Zones', checked: true, Component: ZonesOverlay },
-  { name: 'Entrances', checked: true, Component: EntrancesOverlay },
-  { name: 'Horse & boat routes', checked: true, Component: RoutesOverlay },
-  { name: 'NPCs', checked: false, Component: NpcsOverlay },
-  { name: 'Mobs', checked: false, Component: MobsOverlay },
-  { name: 'Bind points', checked: false, Component: BindPointsOverlay },
+// Drawing order: later layers are on top.
+const OVERLAYS: [LayerKey, ComponentType][] = [
+  ['zones', ZonesOverlay],
+  ['routes', RoutesOverlay],
+  ['mobs', MobsOverlay],
+  ['npcs', NpcsOverlay],
+  ['bindPoints', BindPointsOverlay],
+  ['entrances', EntrancesOverlay],
 ]
 
-// Keeps the store's region in sync with the base layer picked in the layers control.
-function RegionSync() {
-  const setRegion = useMapStore((s) => s.setRegion)
-  useMapEvents({
-    baselayerchange(e) {
-      if (isRegionName(e.name)) setRegion(e.name)
-    },
-  })
+// Width of the search panel, kept clear when fitting the map to a selection.
+const PANEL_WIDTH = 420
+
+// Frames the whole drawn map when it loads or changes.
+function FitRegion() {
+  const map = useMap()
+  const { zones } = useRegionData()
+  useEffect(() => {
+    if (zones.length === 0) return
+    map.fitBounds(latLngBounds(zones.flatMap((z) => z.bounds)), { paddingTopLeft: [PANEL_WIDTH, 20], paddingBottomRight: [20, 20] })
+  }, [map, zones])
   return null
 }
 
-// Dev helper: click the map to drop a marker showing its coordinates.
-function CoordinatePicker() {
-  const [markers, setMarkers] = useState<LatLng[]>([])
-  useMapEvents({
-    click(e) {
-      setMarkers((prev) => [...prev, e.latlng])
-    },
-  })
-  return markers.map((position, i) => (
-    <Marker key={i} position={position}>
-      <Popup>
-        Marker is at lat: {position.lat} lng: {position.lng}
-      </Popup>
-    </Marker>
-  ))
+// Flies to the selected result, and clears the selection on a click on the map itself.
+function SelectionController() {
+  const map = useMap()
+  const selected = useMapStore((s) => s.selected)
+  const select = useMapStore((s) => s.select)
+
+  useEffect(() => {
+    if (!selected) return
+    map.flyToBounds(latLngBounds(selected.positions), { maxZoom: 5, paddingTopLeft: [PANEL_WIDTH, 60], paddingBottomRight: [60, 60] })
+  }, [map, selected])
+
+  useMapEvents({ click: () => select(null) })
+  return null
 }
 
 export default function MapView() {
+  const region = useMapStore((s) => s.region)
+  const layers = useMapStore((s) => s.layers)
+  const tiles = REGIONS.find((r) => r.name === region)!.tiles
+
   return (
     <MapContainer
       center={[-83, 80.5]}
@@ -56,27 +63,22 @@ export default function MapView() {
       minZoom={1}
       maxZoom={7}
       doubleClickZoom={false}
+      zoomControl={false}
       crs={CRS.Simple}
       preferCanvas
     >
-      <LayersControl position="bottomright">
-        {REGIONS.map((region) => (
-          <LayersControl.BaseLayer key={region.name} name={region.name} checked={region.name === DEFAULT_REGION}>
-            <TileLayer url={region.tiles} />
-          </LayersControl.BaseLayer>
-        ))}
-        {OVERLAYS.map(({ name, checked, Component }) => (
-          <LayersControl.Overlay key={name} name={name} checked={checked}>
-            <LayerGroup>
-              <Suspense fallback={null}>
-                <Component />
-              </Suspense>
-            </LayerGroup>
-          </LayersControl.Overlay>
-        ))}
-      </LayersControl>
-      <RegionSync />
-      {import.meta.env.DEV && <CoordinatePicker />}
+      <TileLayer key={region} url={tiles} />
+      <ZoomControl position="bottomright" />
+      <Suspense fallback={null}>
+        <FitRegion />
+        {OVERLAYS.map(([key, Overlay]) => layers[key] && <Overlay key={key} />)}
+      </Suspense>
+      {/* Own pane (and canvas) so highlights stay above every other layer. Its canvas
+          covers the whole map, so it must let mouse events through to the layers below. */}
+      <Pane name="selection" style={{ zIndex: 450, pointerEvents: 'none' }}>
+        <SelectionOverlay />
+      </Pane>
+      <SelectionController />
     </MapContainer>
   )
 }

@@ -1,19 +1,27 @@
-import { useMemo } from 'react'
+import { useDeferredValue, useMemo } from 'react'
 import { useRegionData } from '../../data/regionData'
+import { levelMatches, nameMatches, parseLevel } from '../../search'
+import { useMapStore } from '../../store'
+import { levelColor } from '../../ui/kinds'
 import CircleMarkers, { type CirclePoint } from './CircleMarkers'
+import { useSelectById } from './useSelectById'
 
-// Green for low levels to red for level 60+. Levels can be ranges ("51-55").
-function levelColor(level: string): string {
-  const value = Number.parseInt(level, 10)
-  if (Number.isNaN(value)) return '#888'
-  return `hsl(${120 - Math.min(value, 60) * 2}, 85%, 50%)`
-}
-
+// All mobs, narrowed down by the search box and level filter.
 export default function MobsOverlay() {
   const { mobs } = useRegionData()
-  const points = useMemo<CirclePoint[]>(
-    () => mobs.map(([name, level, lat, lng]) => ({ pos: [lat, lng], color: levelColor(level), label: `${name} (${level})` })),
-    [mobs],
-  )
-  return <CircleMarkers points={points} radius={3} />
+  const query = useDeferredValue(useMapStore((s) => s.query))
+  const levels = useDeferredValue(useMapStore((s) => s.levels))
+  const selectById = useSelectById()
+
+  const points = useMemo<CirclePoint[]>(() => {
+    const result: CirclePoint[] = []
+    for (const [name, level, lat, lng] of mobs) {
+      const parsed = parseLevel(level)
+      if (!nameMatches(name, query) || !levelMatches(parsed, levels)) continue
+      result.push({ id: `mob:${name}:`, pos: [lat, lng], color: levelColor(parsed), label: `${name} (${level})` })
+    }
+    return result
+  }, [mobs, query, levels])
+
+  return <CircleMarkers points={points} radius={3} onSelect={selectById} />
 }

@@ -4,8 +4,8 @@ import type { Entrance, LatLng, Npc, NpcKind, RegionData, Route, Zone } from '..
 
 // Subsets of the DOL tables (see DOLDatabase/Tables in DOLSharp) used here.
 export interface DolMob {
-  Name: string
-  Guild: string
+  Name: string | null
+  Guild: string | null
   X: number
   Y: number
   Region: number
@@ -140,7 +140,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     if (kind === null && m.Realm === 0) {
       mobs.push([name, m.Level > 0 ? String(m.Level) : (template?.Level ?? '?'), p[0], p[1]])
     } else {
-      npcs.push({ name, title: m.Guild, kind: kind ?? 'other', pos: p })
+      npcs.push({ name, title: m.Guild ?? '', kind: kind ?? 'other', pos: p })
       if (kind === 'stable' || kind === 'boat') masters.push({ x: m.X, y: m.Y, kind })
     }
   }

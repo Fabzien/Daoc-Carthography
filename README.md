@@ -13,6 +13,10 @@ Daoc-Carthography is a "Google maps" like maps of Dark Age Of Camelot MMORPG (ht
 Feel free to suggest more features
 
 ## Features
+A Google Maps-like interface: search mobs, NPCs, dungeons, zones and routes by name,
+filter mobs by level, click a result or a point on the map to see it and all its locations,
+and switch maps from the bottom-left picker.
+
 Toggleable layers, generated from the [Dawn of Light](https://github.com/Dawn-of-Light/DOLSharp) server emulator's database:
 * Zones
 * Dungeon entrances
