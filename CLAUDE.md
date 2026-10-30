@@ -49,6 +49,7 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 - [src/ui/](src/ui/) is the Google Maps-like chrome outside the map: `SearchPanel` (search box, layer chips, level filter, results, place card) and `RegionSwitcher` (bottom-left map picker using each map's zoom-0 tile as thumbnail). `kinds.ts` holds shared colors and labels.
 - [src/map/MapView.tsx](src/map/MapView.tsx) renders one `TileLayer` for the store's region (no Leaflet layers control) and the overlays in [src/map/overlays/](src/map/overlays/) whose layer is on. `FitRegion` frames the drawn map on region change; `SelectionController` flies to the selection and clears it on a map click.
 - When the NPCs layer is on, `NpcKindFilter` in the search panel is the legend of NPC colors (`NPC_KINDS`, with counts from `npcKindCounts`) and a filter: each chip hides or shows a kind on the map (store `hiddenNpcKinds`, applied by `NpcsOverlay`; search results are not filtered).
+- Up to zoom 3, `MobsOverlay` groups the (filtered) mobs into 48px grid cells (`clusterByGrid` in [src/map/cluster.ts](src/map/cluster.ts)) and draws groups as count bubbles (`ClusterMarkers`, colored by average level; a click zooms onto the group); lone mobs stay dots. Beyond zoom 3, every mob is drawn.
 - Mobs, NPCs and bind points use `CircleMarkers`, which builds Leaflet circle markers imperatively on the canvas renderer (`preferCanvas`) because there are up to ~16k per region. Clicking one selects its search result by id (`useSelectById`); markers set `bubblingMouseEvents: false` so the map click doesn't clear it. The mobs overlay is narrowed by the query and level filter.
 - Entrances with a `target` open that map on click (`useEnter` → store `enter()`, which selects the arrival point; `FitRegion` then yields to `SelectionController`).
 - [src/coords.ts](src/coords.ts): `locate()` (game coordinates, zone and `/loc` of a map point, via `toGame()`), `parseCoordinates()` and `coordinateResults()` for coordinates typed in the search box. `CursorLocation` in `MapView.tsx` shows the position under the cursor. Enter in the search box selects the first result (store `submits`).
@@ -86,5 +87,4 @@ Backlog of suggested improvements, roughly by priority. Remove an item once it's
 
 **Smaller**
 - Mobile layout: the search panel and map picker take too much room on small screens.
-- Mob clustering at low zoom (~15k points on Albion).
 - Check the zone-relative `/loc` convention against a real in-game `/loc`.
