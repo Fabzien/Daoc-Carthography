@@ -62,3 +62,30 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 - Frontiers calibration comes only from the map's bounding box (routes do follow its rivers); the others are cross-checked by several methods.
 - NPC kinds have no legend; their tooltip shows the title or kind.
 - Search covers the current map only.
+
+## Improvement ideas
+
+Backlog of suggested improvements, roughly by priority. Remove an item once it's done.
+
+**Before deploying**
+- Deployment: the site is fully static. GitHub Pages fits (`dist/` is ~775 MB of the 1 GB limit, 71k files), but every root-absolute URL (`/maps/…`, `/data/…`, `/images/…`, `/assets/…` in `regions.ts`, `regionData.ts`, `EntrancesOverlay.tsx`, `App.tsx`) must go through `import.meta.env.BASE_URL` with Vite's `base` set to `/Daoc-Carthography/`, plus a GitHub Actions workflow deploying `dist/`. The old AWS Amplify setup needs `dist/` as output folder and Node ≥ 22.18.
+- Licensing: the DAoC Cartographe maps are freeware "for private use"; publishing them is the owner's call.
+- CI (GitHub Actions): typecheck, lint, tests and build on every push. Move the Playwright scenario used during development (search, selection, map switch, entrances, coordinates) into the repo as an e2e test.
+
+**Google Maps-like experience**
+- Shareable URLs: map, query and selection in the URL (`?map=Thidranki&q=wolf`); a reload currently loses everything.
+- Search across all maps, not only the current one (global index, jump to the map of a result).
+
+**Game content**
+- Mob con colors relative to the player's level (gray/green/blue/yellow/orange/red/purple), like the original Cartographe.
+- Legend for NPC kinds, and an NPC filter by kind (merchants, trainers…).
+- Decode DAoC Cartographe's community annotations (`database/Francais/master_daoc.loc` in the archive, zlib-compressed, ~1.5 MB, in French): quests, spots, tips.
+- Dungeons: split floors by mob Z (Darkness Falls, Spindelhalla); calibrate Treibh Caillte, Tur Suil and Sobekite Eternal with a manual two-point tool; maps for unlinked entrance targets (Labyrinth, Abandoned Mines, Demon's Breach…).
+
+**Freeshard**
+- Import from a DOL server's own database (MySQL/SQLite) instead of db-public, so the map shows a freeshard's content (the README's original goal).
+
+**Smaller**
+- Mobile layout: the search panel and map picker take too much room on small screens.
+- Mob clustering at low zoom (~15k points on Albion).
+- Check the zone-relative `/loc` convention against a real in-game `/loc`.
