@@ -2,7 +2,7 @@ import { Suspense, useEffect, type ComponentType } from 'react'
 import { CRS, latLngBounds } from 'leaflet'
 import { MapContainer, Pane, TileLayer, useMap, useMapEvents, ZoomControl } from 'react-leaflet'
 import { useRegionData } from '../data/regionData'
-import { REGIONS } from '../data/regions'
+import { getRegion } from '../data/regions'
 import { useMapStore, type LayerKey } from '../store'
 import BindPointsOverlay from './overlays/BindPointsOverlay'
 import EntrancesOverlay from './overlays/EntrancesOverlay'
@@ -54,7 +54,7 @@ function SelectionController() {
 export default function MapView() {
   const region = useMapStore((s) => s.region)
   const layers = useMapStore((s) => s.layers)
-  const tiles = REGIONS.find((r) => r.name === region)!.tiles
+  const { tiles, maxNativeZoom } = getRegion(region)
 
   return (
     <MapContainer
@@ -67,7 +67,7 @@ export default function MapView() {
       crs={CRS.Simple}
       preferCanvas
     >
-      <TileLayer key={region} url={tiles} />
+      <TileLayer key={region} url={tiles} maxNativeZoom={maxNativeZoom} />
       <ZoomControl position="bottomright" />
       <Suspense fallback={null}>
         <FitRegion />

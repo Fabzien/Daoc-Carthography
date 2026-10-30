@@ -299,12 +299,33 @@ input {
 
 .region-list {
   order: 1;
-  display: flex;
-  gap: 6px;
-  padding: 6px;
+  max-width: calc(100vw - 140px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 4px 10px 10px;
   background: var(--surface);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+.region-list h3 {
+  margin: 8px 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.region-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.region-option span {
+  max-width: 88px;
+  text-align: center;
 }
 
 .region-list .region-option {

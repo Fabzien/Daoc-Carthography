@@ -14,7 +14,7 @@ function tables(overrides: Partial<DolTables>): DolTables {
   return {
     mobs: [],
     templates: [],
-    zones: [{ Name: 'Camelot Hills', RegionID: 1, OffsetX: 67, OffsetY: 59, Width: 8, Height: 8 }],
+    zones: [{ ZoneID: 0, Name: 'Camelot Hills', RegionID: 1, OffsetX: 67, OffsetY: 59, Width: 8, Height: 8 }],
     pathPoints: [],
     zonePoints: [],
     regions: [],

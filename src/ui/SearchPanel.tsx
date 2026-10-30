@@ -1,5 +1,6 @@
 import { Suspense, useDeferredValue, useMemo, type KeyboardEvent } from 'react'
 import { useSearchIndex } from '../data/regionData'
+import { getRegion } from '../data/regions'
 import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
 import { describe, levelColor, RESULT_KINDS, ROUTE_COLORS } from './kinds'
@@ -128,7 +129,7 @@ function PlaceCard({ result }: { result: SearchResult }) {
         {result.name}
       </h2>
       <p>{describe(result)}</p>
-      <p className="muted">{region.replace('-', ' · ')}</p>
+      <p className="muted">{getRegion(region).label}</p>
       {/* A copy re-triggers the fly-to effect. */}
       <button className="primary-button" onClick={() => select({ ...result })}>
         Zoom to {result.kind === 'mob' && result.positions.length > 1 ? 'all spawns' : 'location'}

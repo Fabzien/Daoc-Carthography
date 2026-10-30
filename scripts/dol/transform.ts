@@ -20,6 +20,7 @@ export interface DolNpcTemplate {
   Level: string
 }
 export interface DolZone {
+  ZoneID: number
   Name: string
   RegionID: number
   OffsetX: number
@@ -118,7 +119,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   // Only zones drawn on the map's tiles; everything else is filtered by them,
   // which drops spawns in zones the map doesn't show.
   const zones: Zone[] = tables.zones
-    .filter((z) => z.RegionID === id)
+    .filter((z) => z.RegionID === id && (!region.drawnZones || region.drawnZones.includes(z.Name)))
     .map((z) => ({
       name: z.Name,
       bounds: [pos(z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT), pos((z.OffsetX + z.Width) * ZONE_UNIT, (z.OffsetY + z.Height) * ZONE_UNIT)] as [LatLng, LatLng],
