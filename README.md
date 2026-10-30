@@ -36,6 +36,25 @@ The following zones are currenctly available:
 ### Frontiers
 * New frontiers
 
+## Development
+Requires Node.js 22.12+.
+
+```bash
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # production build into dist/
+npm test           # Vitest
+npm run lint
+```
+
+Mob search needs the URL of the mob API in a `.env.local` file:
+
+```
+VITE_API_ENDPOINT=https://example.com/mobs
+```
+
+Stack: Vite, React 19, TypeScript, react-leaflet, Zustand, MUI.
+
 ## 👏 Contributing
 More to come soon
 

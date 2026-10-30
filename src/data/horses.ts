@@ -1,24 +1,10 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types'
-import {
-    Polyline,
-    Marker,
-    Popup,
-} from "react-leaflet";
-import { connect } from "react-redux"
-import { Icon } from 'leaflet'
+import type { HorseRoute } from './types'
 
-const imageHorse = new Icon({
-    iconUrl: './images/horse.png',
-    iconSize: [15, 15],
-})
-
-
-export const LinesAlbClassic =
+export const horsesAlbClassic: HorseRoute[] =
     [
         {
-            Name: 'Flabom',
-            Description: 'Snowdonia Station, Camelot North Gate, Llyn Barfog, Castle Sauvage',
+            name: 'Flabom',
+            description: 'Snowdonia Station, Camelot North Gate, Llyn Barfog, Castle Sauvage',
             loc: [-2.566905999764159, 111.44312357019679],
             path: [
                 [
@@ -42,8 +28,8 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Kelin',
-            Description: 'Snowdonia Fortress',
+            name: 'Kelin',
+            description: 'Snowdonia Fortress',
             loc: [-12.089099259775487, 94.12684051698163],
             path: [
                 [
@@ -53,8 +39,8 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Trachon',
-            Description: 'Llyn Barfog, Camelot East Gate',
+            name: 'Trachon',
+            description: 'Llyn Barfog, Camelot East Gate',
             loc: [-19.3240971921607, 115.32503251804323],
             path: [
                 [
@@ -63,40 +49,40 @@ export const LinesAlbClassic =
                 ],
                 [
                     [-19.3240971921607, 115.32503251804323],
-                    [-70.1711280229011, 129.704145232754033],
+                    [-70.1711280229011, 129.70414523275403],
                 ],
             ]
         },
         {
-            Name: 'Vuloch',
-            Description: 'Snowdonia Station, Castle Sauvage, Caer Ulfwych, Campocorentin Station',
-            loc: [-70.1711280229011, 129.704145232754033],
+            name: 'Vuloch',
+            description: 'Snowdonia Station, Castle Sauvage, Caer Ulfwych, Campocorentin Station',
+            loc: [-70.1711280229011, 129.70414523275403],
             path: [
                 [
                     // Snowdonia Station
-                    [-70.1711280229011, 129.704145232754033],
+                    [-70.1711280229011, 129.70414523275403],
                     [-19.3240971921607, 115.32503251804323],
                 ],
                 [
                     // Castle Sauvage
-                    [-70.1711280229011, 129.704145232754033],
+                    [-70.1711280229011, 129.70414523275403],
                     [-58.287770447184094, 145.1258826210676],
                 ],
                 [
                     // Caer Ulfwych
-                    [-70.1711280229011, 129.704145232754033],
+                    [-70.1711280229011, 129.70414523275403],
                     [-137.94991709694852, 72.79590015941181],
                 ],
                 [
                     // Campocorentin Station
-                    [-70.1711280229011, 129.704145232754033],
+                    [-70.1711280229011, 129.70414523275403],
                     [-109.0289259597218, 100.22207514496104],
                 ],
             ]
         },
         {
-            Name: 'Ridder',
-            Description: 'Avalon Marsh, East Camelot Gates, Gronyr\'s Farm',
+            name: 'Ridder',
+            description: 'Avalon Marsh, East Camelot Gates, Gronyr\'s Farm',
             loc: [-109.0289259597218, 100.22207514496104],
             path: [
                 [
@@ -117,8 +103,8 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Fluvon',
-            Description: 'West Downs, Nobs Stable, Cotswold',
+            name: 'Fluvon',
+            description: 'West Downs, Nobs Stable, Cotswold',
             loc: [-71.3951891917834, 142.5085087521658],
             path: [
                 [
@@ -139,8 +125,8 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Haruld',
-            Description: 'Camelot North Gate',
+            name: 'Haruld',
+            description: 'Camelot North Gate',
             loc: [-66.08467177428817, 139.0418578815534],
             path: [
                 [
@@ -151,8 +137,8 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Uliam',
-            Description: 'Ludlow, West Cornwall',
+            name: 'Uliam',
+            description: 'Ludlow, West Cornwall',
             loc: [-58.287770447184094, 145.1258826210676],
             path: [
                 [
@@ -168,8 +154,8 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Yaren',
-            Description: 'Castle Sauvage',
+            name: 'Yaren',
+            description: 'Castle Sauvage',
             loc: [-53.13284694273766, 118.1987233534363],
             path: [
                 [
@@ -180,14 +166,14 @@ export const LinesAlbClassic =
             ]
         },
         {
-            Name: 'Addard Yarley',
-            Description: 'Avalon Marsh, East Camelot Gates, West Downs',
+            name: 'Addard Yarley',
+            description: 'Avalon Marsh, East Camelot Gates, West Downs',
             loc: [-151.85528063450639, 40.35249811705865],
             path: [
                 [
                     // East Camelot Gates
                     [-151.85528063450639, 40.35249811705865],
-                    [-70.1711280229011, 129.704145232754033],
+                    [-70.1711280229011, 129.70414523275403],
                 ],
                 [
                     // West Downs
@@ -203,67 +189,3 @@ export const LinesAlbClassic =
         },
     ]
 
-const redOptions = {
-    color: 'grey',
-    opacity: 0.8
-}
-
-class HorsesLines extends Component {
-    static propTypes = {
-        mapControls: PropTypes.object.isRequired,
-    }
-
-    state = {
-        lines: []
-    };
-
-    render() {
-        const region = this.props.mapControls.region
-        console.log(region)
-        let lines
-        switch (region) {
-            default:
-                lines = []
-                break
-            case 'Albion-Classic':
-                lines = LinesAlbClassic
-                break
-            case 'Albion-SI':
-                lines = []
-                break
-            case 'Hibernian-Classic':
-                lines = []
-                break
-            case 'Hibernian-SI':
-                lines = []
-                break
-            case 'Midgard-Classic':
-                lines = []
-                break
-            case 'Midgard-SI':
-                lines = []
-                break
-        }
-        console.log(lines)
-        return (
-            lines.map(line =>
-                <Marker key={line.Name} position={line.loc} icon={imageHorse}>
-                    <Popup>
-                        <p>{line.Name}</p>
-                        <p>{line.Description}</p>
-                        <Polyline pathOptions={redOptions} positions={line.path} >
-                        </Polyline >
-                    </Popup>
-                </Marker>)
-        )
-    }
-}
-
-const mapStateToProps = (state) => {
-    const mapControls = state.mapControls
-    return {
-        mapControls
-    }
-}
-
-export default connect(mapStateToProps)(HorsesLines)

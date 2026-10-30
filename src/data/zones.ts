@@ -1,12 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types'
-import {
-    Rectangle,
-    Tooltip
-} from "react-leaflet";
-import { connect } from "react-redux"
+import type { Zone } from './types'
 
-export const zonesAlbClassic =
+export const zonesAlbClassic: Zone[] =
     [
         {
             name: 'Camelot',
@@ -54,7 +48,7 @@ export const zonesAlbClassic =
         },
     ]
 
-export const zonesAlbSI =
+export const zonesAlbSI: Zone[] =
     [
         {
             name: 'Inishail Island',
@@ -86,7 +80,7 @@ export const zonesAlbSI =
         },
     ]
 
-export const zonesHibernianClassic =
+export const zonesHibernianClassic: Zone[] =
     [
         {
             name: 'Cliffs of Moher',
@@ -130,49 +124,3 @@ export const zonesHibernianClassic =
         },
     ]
 
-class ZonesMarkers extends Component {
-    static propTypes = {
-        mapControls: PropTypes.object.isRequired,
-    }
-
-
-    render() {
-        const region = this.props.mapControls.region
-        console.log(region)
-        let rectangles
-        switch (region) {
-            default:
-                rectangles = []
-                break
-            case 'Albion-Classic':
-                rectangles = zonesAlbClassic
-                break
-            case 'Albion-SI':
-                rectangles = zonesAlbSI
-                break
-            case 'Hibernian-Classic':
-                rectangles = zonesHibernianClassic
-                break
-        }
-        console.log(rectangles)
-        return (
-            rectangles.map(zone =>
-                <Rectangle key={zone.name} bounds={zone.loc} opacity={0} pathOptions={{ color: 'rgba(0,0,0,0)' }}>
-                    <Tooltip direction="bottom" opacity={0.5} sticky>
-                        {zone.name}
-                    </Tooltip>
-                </Rectangle>)
-
-        )
-        // return null
-    }
-}
-
-const mapStateToProps = (state) => {
-    const mapControls = state.mapControls
-    return {
-        mapControls
-    }
-}
-
-export default connect(mapStateToProps)(ZonesMarkers)
