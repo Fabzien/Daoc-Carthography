@@ -112,4 +112,24 @@ describe('buildRegionData', () => {
     )
     expect(data.entrances.map((e) => e.name)).toEqual(['Darkness Falls'])
   })
+
+  it('returns no data for maps without DOL calibration', () => {
+    const treibh = REGIONS.find((r) => r.name === 'Treibh-Caillte')!
+    const data = buildRegionData(treibh, tables({ mobs: [mob({ Region: 224 })] }), 'test')
+    expect(data.mobs).toEqual([])
+  })
+
+  it('keeps what falls on a floor plan, without zones', () => {
+    const catacombs = REGIONS.find((r) => r.name === 'Catacombs-of-Cardova')!
+    const data = buildRegionData(
+      catacombs,
+      tables({
+        zones: [{ ZoneID: 1, Name: 'Catacombs of Cardova', RegionID: 23, OffsetX: 1, OffsetY: 1, Width: 8, Height: 8 }],
+        mobs: [mob({ Region: 23, X: 30000, Y: 35000 }), mob({ Region: 23, X: 90000, Y: 35000 })],
+      }),
+      'test',
+    )
+    expect(data.zones).toEqual([])
+    expect(data.mobs).toHaveLength(1)
+  })
 })

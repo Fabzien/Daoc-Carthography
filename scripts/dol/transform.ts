@@ -113,19 +113,22 @@ function groupPaths(pathPoints: DolPathPoint[]): Map<string, DolPathPoint[]> {
 }
 
 export function buildRegionData(region: Region, tables: DolTables, source: string): RegionData {
-  const id = region.dolRegion
-  const pos = (x: number, y: number) => toMap(region, x, y)
+  const { dol } = region
+  if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [] }
+  const id = dol.region
+  const pos = (x: number, y: number) => toMap(dol, x, y)
 
   // Only zones drawn on the map's tiles; everything else is filtered by them,
-  // which drops spawns in zones the map doesn't show.
+  // which drops spawns in zones the map doesn't show. A floor plan covers part
+  // of its region's single zone: there, keep what falls on the plan.
   const zones: Zone[] = tables.zones
-    .filter((z) => z.RegionID === id && (!region.drawnZones || region.drawnZones.includes(z.Name)))
+    .filter((z) => z.RegionID === id && !region.plan && (!region.drawnZones || region.drawnZones.includes(z.Name)))
     .map((z) => ({
       name: z.Name,
       bounds: [pos(z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT), pos((z.OffsetX + z.Width) * ZONE_UNIT, (z.OffsetY + z.Height) * ZONE_UNIT)] as [LatLng, LatLng],
     }))
     .filter((z) => isOnMap(z.bounds[0]) && isOnMap(z.bounds[1]))
-  const inZone = (p: LatLng) => zones.some((z) => contains(z.bounds, p))
+  const inZone = region.plan ? isOnMap : (p: LatLng) => zones.some((z) => contains(z.bounds, p))
 
   const templates = new Map(tables.templates.map((t) => [t.TemplateId, t]))
   const mobs: RegionData['mobs'] = []

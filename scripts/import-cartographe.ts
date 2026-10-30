@@ -1,12 +1,13 @@
-// Builds map tiles for the regions of src/data/regions.ts that list `drawnZones`,
-// from the zone maps of DAoC Cartographe 2.52 (freeware by Tixu, 2006).
+// Builds map tiles for the regions of src/data/regions.ts that list `drawnZones`
+// or a `plan`, from the maps of DAoC Cartographe 2.52 (freeware by Tixu, 2006).
 //
 //   npm run import-cartographe                   # zone positions from the latest db-public release
 //   npm run import-cartographe -- --release 85
 //
 // The original download link is dead; the archive comes from the Wayback
 // Machine and is cached in .cache/daoc-cartographe/. Each zone map is placed at
-// its DOL zone offset, so the tiles share the coordinates of the DOL data.
+// its DOL zone offset, so the tiles share the coordinates of the DOL data;
+// floor plans are used whole (their calibration is in regions.ts).
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -49,9 +50,10 @@ function readMaps(archive: Uint8Array): Map<string, Uint8Array> {
 
 // Assembles the region's drawn zones at their DOL offsets, at its native zoom.
 function assemble(region: Region, zones: DolZone[], maps: Map<string, Uint8Array>): Raster {
+  const dol = region.dol!
   const pixelsPerUnit = 2 ** region.maxNativeZoom
   const placed = region.drawnZones!.map((name) => {
-    const zone = zones.find((z) => z.RegionID === region.dolRegion && z.Name === name)
+    const zone = zones.find((z) => z.RegionID === dol.region && z.Name === name)
     if (!zone) throw new Error(`${region.name}: no DOL zone named ${name}`)
     // Some files carry a "b" suffix (revised maps).
     const bmp = maps.get(String(zone.ZoneID)) ?? maps.get(`${zone.ZoneID}b`)
@@ -60,8 +62,8 @@ function assemble(region: Region, zones: DolZone[], maps: Map<string, Uint8Array
     const expected = zone.Width * ZONE_UNIT_TO_MAP * pixelsPerUnit
     if (image.width !== expected) throw new Error(`${region.name}: ${name} map is ${image.width}px, expected ${expected}px at zoom ${region.maxNativeZoom}`)
     clearBackground(image, BACKGROUND)
-    const x = (zone.OffsetX * ZONE_UNIT_TO_MAP + region.offset[0]) * pixelsPerUnit
-    const y = (zone.OffsetY * ZONE_UNIT_TO_MAP + region.offset[1]) * pixelsPerUnit
+    const x = (zone.OffsetX * ZONE_UNIT_TO_MAP + dol.offset[0]) * pixelsPerUnit
+    const y = (zone.OffsetY * ZONE_UNIT_TO_MAP + dol.offset[1]) * pixelsPerUnit
     if (x < 0 || y < 0) throw new Error(`${region.name}: ${name} lies left of or above the map origin`)
     return { image, x, y }
   })
@@ -69,6 +71,18 @@ function assemble(region: Region, zones: DolZone[], maps: Map<string, Uint8Array
   const canvas = createRaster(roundUp(Math.max(...placed.map((p) => p.x + p.image.width))), roundUp(Math.max(...placed.map((p) => p.y + p.image.height))))
   for (const { image, x, y } of placed) blit(canvas, image, x, y)
   return canvas
+}
+
+// A floor plan is the whole map: one image, 256 map units wide at its native zoom.
+function readPlan(region: Region, maps: Map<string, Uint8Array>): Raster {
+  const bmp = maps.get(region.plan!.toLowerCase())
+  if (!bmp) throw new Error(`${region.name}: no plan named ${region.plan}`)
+  const image = readBmp8(bmp)
+  const expected = TILE * 2 ** region.maxNativeZoom
+  if (image.width !== expected || image.height !== expected) throw new Error(`${region.name}: plan is ${image.width}x${image.height}px, expected ${expected}px`)
+  // Plans use different background grays: take the corner pixel's.
+  clearBackground(image, [image.data[0], image.data[1], image.data[2]])
+  return image
 }
 
 async function writeTiles(region: Region, canvas: Raster): Promise<number> {
@@ -102,9 +116,9 @@ async function main() {
   // Regions sharing tiles (the three Atlantis) are built once.
   const built = new Set<string>()
   for (const region of REGIONS) {
-    if (!region.drawnZones || built.has(region.tiles)) continue
+    if (!(region.drawnZones || region.plan) || built.has(region.tiles)) continue
     built.add(region.tiles)
-    const count = await writeTiles(region, assemble(region, zones, maps))
+    const count = await writeTiles(region, region.plan ? readPlan(region, maps) : assemble(region, zones, maps))
     console.log(`${region.tiles.padEnd(60)} ${count} tiles`)
   }
 }

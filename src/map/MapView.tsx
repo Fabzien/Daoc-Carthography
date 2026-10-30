@@ -25,14 +25,16 @@ const OVERLAYS: [LayerKey, ComponentType][] = [
 // Width of the search panel, kept clear when fitting the map to a selection.
 const PANEL_WIDTH = 420
 
-// Frames the whole drawn map when it loads or changes.
+// Frames the whole drawn map when it loads or changes: its zones, or for maps
+// without any (floor plans, maps without DOL data) its extent.
 function FitRegion() {
   const map = useMap()
   const { zones } = useRegionData()
+  const extent = getRegion(useMapStore((s) => s.region)).extent ?? 256
   useEffect(() => {
-    if (zones.length === 0) return
-    map.fitBounds(latLngBounds(zones.flatMap((z) => z.bounds)), { paddingTopLeft: [PANEL_WIDTH, 20], paddingBottomRight: [20, 20] })
-  }, [map, zones])
+    const bounds = zones.length > 0 ? latLngBounds(zones.flatMap((z) => z.bounds)) : latLngBounds([0, 0], [-extent, extent])
+    map.fitBounds(bounds, { paddingTopLeft: [PANEL_WIDTH, 20], paddingBottomRight: [20, 20] })
+  }, [map, zones, extent])
   return null
 }
 
