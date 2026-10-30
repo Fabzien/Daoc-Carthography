@@ -10,6 +10,9 @@
 # testing
 /coverage
 
+# db-public downloads (scripts/import-dol.ts)
+/.cache
+
 # production
 /dist
 
