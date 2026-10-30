@@ -1,1 +1,1 @@
-{"source":"Eve-of-Darkness/db-public release 85","zones":[{"name":"Wilton","bounds":[[0,0],[-32,32]]}],"mobs":[],"npcs":[],"routes":[],"entrances":[],"bindPoints":[]}
+{"source":"Eve-of-Darkness/db-public release 85","zones":[{"name":"Wilton","bounds":[[0,0],[-32,32]]}],"mobs":[],"npcs":[],"routes":[],"entrances":[],"bindPoints":[],"gameZones":[{"name":"Wilton","origin":[524288,524288],"size":[65536,65536]}]}

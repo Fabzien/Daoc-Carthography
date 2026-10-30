@@ -263,6 +263,28 @@ input {
   cursor: pointer;
 }
 
+.secondary-button {
+  margin-left: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* In-game position under the cursor (top right) */
+
+.cursor-location {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
 /* Map picker (bottom left) */
 
 .region-switcher {

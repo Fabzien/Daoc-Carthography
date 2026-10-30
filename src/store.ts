@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { DEFAULT_REGION, type RegionName } from './data/regions'
+import type { LatLng } from './data/types'
 import { ANY_LEVEL, isAnyLevel, type LevelFilter, type SearchResult } from './search'
 
 export type LayerKey = 'zones' | 'entrances' | 'routes' | 'npcs' | 'mobs' | 'bindPoints'
@@ -12,6 +13,11 @@ interface MapState {
   // The result whose locations are highlighted and shown in the place card.
   selected: SearchResult | null
   setRegion: (region: RegionName) => void
+  // Opens a map through an entrance, selecting the arrival point when known.
+  enter: (region: RegionName, arrival?: { pos: LatLng; label: string }) => void
+  // Bumped by Enter in the search box: the results list selects its first result.
+  submits: number
+  submitSearch: () => void
   toggleLayer: (layer: LayerKey) => void
   setQuery: (query: string) => void
   setLevels: (levels: LevelFilter) => void
@@ -26,6 +32,13 @@ export const useMapStore = create<MapState>()((set) => ({
   selected: null,
   // A selection belongs to one region's data.
   setRegion: (region) => set({ region, selected: null }),
+  enter: (region, arrival) =>
+    set({
+      region,
+      selected: arrival ? { id: 'arrival', kind: 'location', name: arrival.label, detail: '', levels: null, positions: [arrival.pos] } : null,
+    }),
+  submits: 0,
+  submitSearch: () => set((s) => ({ submits: s.submits + 1 })),
   toggleLayer: (layer) => set((s) => ({ layers: { ...s.layers, [layer]: !s.layers[layer] } })),
   setQuery: (query) => set({ query }),
   // Filtering by level is about mobs: show them so the filter is visible on the map.

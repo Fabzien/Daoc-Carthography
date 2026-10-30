@@ -20,6 +20,7 @@ export const RESULT_KINDS: Record<ResultKind, { color: string; label: string }> 
   entrance: { color: '#5f6368', label: 'Dungeon entrance' },
   zone: { color: '#188038', label: 'Zone' },
   route: { color: '#a0522d', label: 'Route' },
+  location: { color: '#d93025', label: 'Game location' },
 }
 
 export const ROUTE_COLORS = { horse: '#d4a373', boat: '#4ea8de' }
@@ -46,6 +47,8 @@ export function describe(result: SearchResult): string {
       return result.detail ? `NPC · ${result.detail}` : 'NPC'
     case 'route':
       return result.detail === 'boat' ? 'Boat route' : 'Horse route'
+    case 'location':
+      return result.detail ? `Game location · ${result.detail}` : 'Game location'
     default:
       return RESULT_KINDS[result.kind].label
   }

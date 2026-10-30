@@ -4,7 +4,7 @@ import { useMapStore } from '../store'
 import type { RegionName } from './regions'
 import type { RegionData } from './types'
 
-const EMPTY: RegionData = { source: '', zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [] }
+const EMPTY: RegionData = { source: '', zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [], gameZones: [] }
 
 // One request per region for the whole session, shared by every overlay.
 const cache = new Map<RegionName, Promise<RegionData>>()

@@ -1,6 +1,6 @@
 // Pure transformations from DOL database tables to the map's RegionData.
-import { toMap, type Region } from '../../src/data/regions.ts'
-import type { Entrance, LatLng, Npc, NpcKind, RegionData, Route, Zone } from '../../src/data/types.ts'
+import { REGIONS, toMap, type Region } from '../../src/data/regions.ts'
+import type { Entrance, GameZone, LatLng, Npc, NpcKind, RegionData, Route, Zone } from '../../src/data/types.ts'
 
 // Subsets of the DOL tables (see DOLDatabase/Tables in DOLSharp) used here.
 export interface DolMob {
@@ -39,6 +39,8 @@ export interface DolZonePoint {
   SourceX: number
   SourceY: number
   TargetRegion: number
+  TargetX: number
+  TargetY: number
 }
 export interface DolRegion {
   RegionID: number
@@ -114,7 +116,7 @@ function groupPaths(pathPoints: DolPathPoint[]): Map<string, DolPathPoint[]> {
 
 export function buildRegionData(region: Region, tables: DolTables, source: string): RegionData {
   const { dol } = region
-  if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [] }
+  if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [], gameZones: [] }
   const id = dol.region
   const pos = (x: number, y: number) => toMap(dol, x, y)
 
@@ -163,7 +165,12 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     const target = regionNames.get(zp.TargetRegion)
     // Zone points to regions missing from the Regions table lead nowhere.
     if (zp.SourceRegion !== id || zp.SourceX <= 0 || zp.TargetRegion === id || !target) continue
-    const entrance = { name: target, pos: pos(zp.SourceX, zp.SourceY) }
+    const entrance: Entrance = { name: target, pos: pos(zp.SourceX, zp.SourceY) }
+    const destination = mapForRegion(zp.TargetRegion, target, regionNames)
+    if (destination) {
+      const arrival = destination.dol && toMap(destination.dol, zp.TargetX, zp.TargetY)
+      entrance.target = { map: destination.name, ...(arrival && isOnMap(arrival) && { pos: arrival }) }
+    }
     // The same entrance often has one zone point per realm.
     const duplicate = entrances.some((e) => e.name === entrance.name && Math.hypot(e.pos[0] - entrance.pos[0], e.pos[1] - entrance.pos[1]) < 1)
     if (!duplicate && inZone(entrance.pos)) entrances.push(entrance)
@@ -171,5 +178,17 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
 
   const bindPoints = tables.bindPoints.filter((b) => b.Region === id).map((b) => pos(b.X, b.Y)).filter(inZone)
 
-  return { source, zones, mobs, npcs, routes, entrances, bindPoints }
+  const gameZones: GameZone[] = tables.zones
+    .filter((z) => z.RegionID === id)
+    .map((z) => ({ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT] }))
+
+  return { source, zones, mobs, npcs, routes, entrances, bindPoints, gameZones }
+}
+
+// The map showing a DOL region. Regions without one of their own can still
+// share a name with one that has a map: the Atlantis dungeons exist once per
+// realm and only the Albion copies have maps.
+function mapForRegion(regionId: number, name: string, regionNames: Map<number, string>): Region | undefined {
+  const idOf = (r: Region) => r.dol?.region ?? r.dolRegion
+  return REGIONS.find((r) => idOf(r) === regionId) ?? REGIONS.find((r) => idOf(r) !== undefined && regionNames.get(idOf(r)!) === name)
 }

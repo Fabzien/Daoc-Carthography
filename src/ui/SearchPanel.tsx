@@ -1,6 +1,8 @@
-import { Suspense, useDeferredValue, useMemo, type KeyboardEvent } from 'react'
-import { useSearchIndex } from '../data/regionData'
-import { getRegion } from '../data/regions'
+import { Suspense, useDeferredValue, useEffect, useMemo, useRef, type KeyboardEvent } from 'react'
+import { coordinateResults } from '../coords'
+import { useRegionData, useSearchIndex } from '../data/regionData'
+import { getRegion, isRegionName, type RegionName } from '../data/regions'
+import { useEnter } from '../map/overlays/useEnter'
 import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
 import { describe, levelColor, RESULT_KINDS, ROUTE_COLORS } from './kinds'
@@ -26,7 +28,10 @@ function SearchBox() {
   const selected = useMapStore((s) => s.selected)
   const select = useMapStore((s) => s.select)
 
+  const submitSearch = useMapStore((s) => s.submitSearch)
+
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') submitSearch()
     if (event.key !== 'Escape') return
     if (selected) select(null)
     else setQuery('')
@@ -39,7 +44,7 @@ function SearchBox() {
       </span>
       <input
         type="search"
-        placeholder="Search mobs, NPCs, dungeons, zones…"
+        placeholder="Search mobs, NPCs, dungeons, zones, /loc…"
         aria-label="Search"
         value={query}
         onChange={(e) => {
@@ -119,6 +124,8 @@ function LevelFilter() {
 function PlaceCard({ result }: { result: SearchResult }) {
   const select = useMapStore((s) => s.select)
   const region = useMapStore((s) => s.region)
+  const enter = useEnter()
+  const target = result.target && isRegionName(result.target.map) ? result.target : undefined
   return (
     <div className="place-card">
       <button className="link-button" onClick={() => select(null)}>
@@ -134,17 +141,38 @@ function PlaceCard({ result }: { result: SearchResult }) {
       <button className="primary-button" onClick={() => select({ ...result })}>
         Zoom to {result.kind === 'mob' && result.positions.length > 1 ? 'all spawns' : 'location'}
       </button>
+      {target && (
+        <button className="primary-button secondary-button" onClick={() => enter(target)}>
+          Enter {getRegion(target.map as RegionName).label} →
+        </button>
+      )}
     </div>
   )
 }
 
 function Results() {
   const index = useSearchIndex()
+  const { gameZones } = useRegionData()
+  const { dol } = getRegion(useMapStore((s) => s.region))
   const query = useDeferredValue(useMapStore((s) => s.query))
   const levels = useDeferredValue(useMapStore((s) => s.levels))
   const selected = useMapStore((s) => s.selected)
   const select = useMapStore((s) => s.select)
-  const results = useMemo(() => search(index, query, levels), [index, query, levels])
+  const submits = useMapStore((s) => s.submits)
+  const results = useMemo(
+    () => [...(dol ? coordinateResults(query, dol, gameZones) : []), ...search(index, query, levels)],
+    [dol, gameZones, index, query, levels],
+  )
+
+  // Enter in the search box picks the first result, read through a ref so the
+  // effect runs on submits only.
+  const firstResult = useRef<SearchResult | undefined>(undefined)
+  useEffect(() => {
+    firstResult.current = results[0]
+  }, [results])
+  useEffect(() => {
+    if (submits > 0 && firstResult.current) select(firstResult.current)
+  }, [submits, select])
 
   if (selected) return <PlaceCard result={selected} />
   if (!query.trim() && isAnyLevel(levels)) return null

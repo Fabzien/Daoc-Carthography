@@ -37,7 +37,8 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 - zones come from the `Zones` table (offsets in units of 8192); only zones drawn on the tiles are kept, and every other entity must fall inside one of them;
 - `Mob` rows with realm 0 and no service ClassType are mobs (level from `NpcTemplate` when the spawn has none); the rest are NPCs, classified by ClassType (`npcKind`);
 - routes are `PathPoints` paths starting within 1000 units of a stable/boat master (how DOL's `GameStableMaster` links tickets to paths);
-- entrances are `ZonePoint` rows leading to another known region, named after it;
+- entrances are `ZonePoint` rows leading to another known region, named after it, with a `target` map (matched by DOL region id, else by region name: the Atlantis dungeons only have their Albion copy) and the arrival point on it when that map is calibrated;
+- `gameZones` lists every zone of the region in game units, to turn coordinates into zone-relative `/loc` ones;
 - floor plans have no zones (the DOL zone square means nothing on a plan): entities are kept when they fall on the plan.
 
 **Map tiles.** `npm run import-cartographe` ([scripts/import-cartographe.ts](scripts/import-cartographe.ts)) downloads DAoC Cartographe 2.52 from the Wayback Machine (sha256-checked, cached in `.cache/daoc-cartographe/`), decodes its 8-bit BMPs, clears the gray background from the image border, and writes tiles for zoom 0..maxNativeZoom (raster helpers in `scripts/cartographe/raster.ts`). It regenerates every tile folder it owns; the Vite dev server can then serve stale `index.html` for new tiles until restarted.
@@ -48,6 +49,8 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 - [src/ui/](src/ui/) is the Google Maps-like chrome outside the map: `SearchPanel` (search box, layer chips, level filter, results, place card) and `RegionSwitcher` (bottom-left map picker using each map's zoom-0 tile as thumbnail). `kinds.ts` holds shared colors and labels.
 - [src/map/MapView.tsx](src/map/MapView.tsx) renders one `TileLayer` for the store's region (no Leaflet layers control) and the overlays in [src/map/overlays/](src/map/overlays/) whose layer is on. `FitRegion` frames the drawn map on region change; `SelectionController` flies to the selection and clears it on a map click.
 - Mobs, NPCs and bind points use `CircleMarkers`, which builds Leaflet circle markers imperatively on the canvas renderer (`preferCanvas`) because there are up to ~16k per region. Clicking one selects its search result by id (`useSelectById`); markers set `bubblingMouseEvents: false` so the map click doesn't clear it. The mobs overlay is narrowed by the query and level filter.
+- Entrances with a `target` open that map on click (`useEnter` → store `enter()`, which selects the arrival point; `FitRegion` then yields to `SelectionController`).
+- [src/coords.ts](src/coords.ts): `locate()` (game coordinates, zone and `/loc` of a map point, via `toGame()`), `parseCoordinates()` and `coordinateResults()` for coordinates typed in the search box. `CursorLocation` in `MapView.tsx` shows the position under the cursor. Enter in the search box selects the first result (store `submits`).
 - `SelectionOverlay` draws highlights in its own `selection` pane. That pane's canvas covers the whole map, so it has `pointer-events: none`; without it, nothing below receives hover or clicks.
 
 **Leaflet setup.** `src/leafletSetup.ts` points the default marker icon (used by the dev helper) at bundled assets (Leaflet's CSS-based path detection breaks under bundlers). Leaflet CSS is imported from the package in `main.tsx`.

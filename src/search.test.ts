@@ -14,6 +14,7 @@ const data: RegionData = {
   routes: [{ name: 'Camelot → Humberton', kind: 'horse', path: [[-60, 130], [-70, 140]] }],
   entrances: [{ name: 'Darkness Falls', pos: [-81, 152] }],
   bindPoints: [],
+  gameZones: [],
 }
 const index = buildIndex(data)
 

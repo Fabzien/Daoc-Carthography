@@ -103,14 +103,32 @@ describe('buildRegionData', () => {
       tables({
         regions: [{ RegionID: 249, Description: 'Darkness Falls' }],
         zonePoints: [
-          { SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 249 },
-          { SourceRegion: 1, SourceX: inZone.X + 10, SourceY: inZone.Y, TargetRegion: 249 },
-          { SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 1007 },
+          { SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 249, TargetX: 0, TargetY: 0 },
+          { SourceRegion: 1, SourceX: inZone.X + 10, SourceY: inZone.Y, TargetRegion: 249, TargetX: 0, TargetY: 0 },
+          { SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 1007, TargetX: 0, TargetY: 0 },
         ],
       }),
       'test',
     )
     expect(data.entrances.map((e) => e.name)).toEqual(['Darkness Falls'])
+  })
+
+  it('links entrances to the map they lead to, with the arrival point', () => {
+    const data = buildRegionData(
+      albion,
+      tables({
+        regions: [{ RegionID: 23, Description: 'Catacombs of Cardova' }],
+        zonePoints: [{ SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 23, TargetX: 30000, TargetY: 35000 }],
+      }),
+      'test',
+    )
+    expect(data.entrances[0].target?.map).toBe('Catacombs-of-Cardova')
+    expect(data.entrances[0].target?.pos).toEqual(expect.arrayContaining([expect.any(Number)]))
+  })
+
+  it('lists every zone of the region in game units', () => {
+    const data = buildRegionData(albion, tables({}), 'test')
+    expect(data.gameZones).toEqual([{ name: 'Camelot Hills', origin: [67 * ZONE, 59 * ZONE], size: [8 * ZONE, 8 * ZONE] }])
   })
 
   it('returns no data for maps without DOL calibration', () => {

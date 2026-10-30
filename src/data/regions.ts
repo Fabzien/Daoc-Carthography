@@ -35,6 +35,8 @@ export interface RegionDefinition {
   drawnZones?: readonly string[]
   // DAoC Cartographe floor plan (file name without extension) the tiles are built from.
   plan?: string
+  // DOL RegionID of a map without calibration, so entrances can still lead to it.
+  dolRegion?: number
 }
 
 // A DAoC Cartographe floor plan (dungeon or capital city), shown whole as a
@@ -44,7 +46,7 @@ export interface RegionDefinition {
 function plan<const N extends string>(name: N, label: string, group: RegionGroup, file: string, dolRegion?: number, fit?: readonly [number, number, number], pixels = 1024) {
   const maxNativeZoom = Math.log2(pixels / 256)
   const tiles = `/maps/plans/${file.toLowerCase()}/tiles/{z}/{x}/{y}.png`
-  if (dolRegion === undefined || !fit) return { name, label, group, tiles, maxNativeZoom, plan: file }
+  if (dolRegion === undefined || !fit) return { name, label, group, tiles, maxNativeZoom, plan: file, dolRegion }
   // Plan pixels are map units * 2^maxNativeZoom.
   const scale = fit[0] * 2 ** maxNativeZoom
   return { name, label, group, tiles, maxNativeZoom, plan: file, dol: { region: dolRegion, scale, offset: [-fit[1] / scale, -fit[2] / scale] as const } }
@@ -112,15 +114,15 @@ const DEFINITIONS = [
   plan('Caer-Sidi', 'Caer Sidi', 'Albion dungeons', 'D_Alb_06', 60, [25.535, 22665, 20556]),
   plan('Krondon', 'Krondon', 'Albion dungeons', 'D_Alb_07', 61, [55.444, 12918, 16944]),
   plan('Avalon-City', 'Avalon City', 'Albion dungeons', 'D_Alb_08', 50, [36.155, 17614, 14796]),
-  plan('Crystal-Cave', 'Crystal Cave', 'Albion dungeons', 'D_Alb_09', undefined, undefined, 512),
+  plan('Crystal-Cave', 'Crystal Cave', 'Albion dungeons', 'D_Alb_09', 62, undefined, 512),
   plan('Glimmer-Mines', 'Glimmer Mines', 'Hibernia dungeons', 'D_hib_01'),
   plan('Fomor', 'Fomor', 'Hibernia dungeons', 'D_Hib_02', 180, [21.321, 24458, 18741]),
   plan('Galladoria', 'Galladoria', 'Hibernia dungeons', 'D_Hib_03', 191, [43.878, 14655, 22678]),
   plan('Muire-Tomb', 'Muire Tomb', 'Hibernia dungeons', 'D_Hib_04', 221, [13.899, 26562, 26744]),
   plan('Koalinth-Caverns', 'Koalinth Caverns', 'Hibernia dungeons', 'D_Hib_05', 223, [13.967, 24388, 24368]),
   plan('Spraggon-Den', 'Spraggon Den', 'Hibernia dungeons', 'D_Hib_06', 222, [12.948, 25362, 25386]),
-  plan('Treibh-Caillte', 'Treibh Caillte', 'Hibernia dungeons', 'D_Hib_07'),
-  plan('Tur-Suil', 'Tur Suil', 'Hibernia dungeons', 'D_Hib_08'),
+  plan('Treibh-Caillte', 'Treibh Caillte', 'Hibernia dungeons', 'D_Hib_07', 224),
+  plan('Tur-Suil', 'Tur Suil', 'Hibernia dungeons', 'D_Hib_08', 190),
   plan('Nisses-Lair', "Nisse's Lair", 'Midgard dungeons', 'D_Mid_01', 129, [15.142, 22637, 26033]),
   plan('Vendo-Caverns', 'Vendo Caverns', 'Midgard dungeons', 'D_Mid_02', 126, [10.228, 23757, 27906]),
   plan('Spindelhalla', 'Spindelhalla', 'Midgard dungeons', 'D_Mid_03', 125, [16.134, 26728, 27566]),
@@ -136,11 +138,11 @@ const DEFINITIONS = [
   plan('Halls-of-Maati', "Halls of Ma'ati", 'Atlantis dungeons', 'DMaati', 40, [42.397, 10136, 18132]),
   plan('City-of-Aerus', 'City of Aerus', 'Atlantis dungeons', 'Daerus', 47, [44.862, 2109, 10131]),
   plan('Temple-of-Twilight', 'Temple of Twilight', 'Atlantis dungeons', 'Dtemple', 37, [44.161, 25622, 9340]),
-  plan('Sobekite-Eternal', 'Sobekite Eternal', 'Atlantis dungeons', 'Dsobekite'),
-  plan('Celestius', 'Celestius', 'Atlantis dungeons', 'Dcelestius', undefined, undefined, 512),
-  plan('Deep-Volcanus', 'Deep Volcanus', 'Atlantis dungeons', 'Dvolcanus'),
-  plan('Great-Pyramid', 'Great Pyramid of Stygia', 'Atlantis dungeons', 'Dpyramid', undefined, undefined, 512),
-  plan('Cetus-Pit', "Cetus' Pit", 'Atlantis dungeons', 'Dcitus_pit', undefined, undefined, 512),
+  plan('Sobekite-Eternal', 'Sobekite Eternal', 'Atlantis dungeons', 'Dsobekite', 36),
+  plan('Celestius', 'Celestius', 'Atlantis dungeons', 'Dcelestius', 91, undefined, 512),
+  plan('Deep-Volcanus', 'Deep Volcanus', 'Atlantis dungeons', 'Dvolcanus', 46),
+  plan('Great-Pyramid', 'Great Pyramid of Stygia', 'Atlantis dungeons', 'Dpyramid', 45, undefined, 512),
+  plan('Cetus-Pit', "Cetus' Pit", 'Atlantis dungeons', 'Dcitus_pit', 35, undefined, 512),
 ] as const satisfies readonly RegionDefinition[]
 
 export type RegionName = (typeof DEFINITIONS)[number]['name']
@@ -168,4 +170,9 @@ export function thumbnailUrl(region: Region): string {
 export function toMap(dol: NonNullable<Region['dol']>, x: number, y: number): LatLng {
   const round = (v: number) => Math.round(v * 100) / 100
   return [round(-(y / dol.scale + dol.offset[1])), round(x / dol.scale + dol.offset[0])]
+}
+
+// Inverse of toMap: DOL game coordinates of a map point, rounded to game units.
+export function toGame(dol: NonNullable<Region['dol']>, [lat, lng]: LatLng): [number, number] {
+  return [Math.round((lng - dol.offset[0]) * dol.scale), Math.round((-lat - dol.offset[1]) * dol.scale)]
 }

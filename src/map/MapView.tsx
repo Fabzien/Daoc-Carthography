@@ -1,6 +1,7 @@
-import { Suspense, useEffect, type ComponentType } from 'react'
-import { CRS, latLngBounds } from 'leaflet'
+import { Suspense, useEffect, useState, type ComponentType } from 'react'
+import { CRS, latLngBounds, type LatLng, type Point } from 'leaflet'
 import { MapContainer, Pane, TileLayer, useMap, useMapEvents, ZoomControl } from 'react-leaflet'
+import { locate } from '../coords'
 import { useRegionData } from '../data/regionData'
 import { getRegion } from '../data/regions'
 import { useMapStore, type LayerKey } from '../store'
@@ -32,10 +33,40 @@ function FitRegion() {
   const { zones } = useRegionData()
   const extent = getRegion(useMapStore((s) => s.region)).extent ?? 256
   useEffect(() => {
+    // Arriving through an entrance selects the arrival point: fly there instead.
+    if (useMapStore.getState().selected) return
     const bounds = zones.length > 0 ? latLngBounds(zones.flatMap((z) => z.bounds)) : latLngBounds([0, 0], [-extent, extent])
     map.fitBounds(bounds, { paddingTopLeft: [PANEL_WIDTH, 20], paddingBottomRight: [20, 20] })
   }, [map, zones, extent])
   return null
+}
+
+// In-game position under the cursor: zone and /loc, then global coordinates.
+function CursorLocation() {
+  const { dol } = getRegion(useMapStore((s) => s.region))
+  const { gameZones } = useRegionData()
+  // Kept in screen space so the readout follows the map when it pans or flies
+  // under a still cursor.
+  const [cursor, setCursor] = useState<{ point: Point; latlng: LatLng } | null>(null)
+  const map = useMapEvents({
+    mousemove: (e) => setCursor({ point: e.containerPoint, latlng: e.latlng }),
+    move: () => setCursor((c) => c && { point: c.point, latlng: map.containerPointToLatLng(c.point) }),
+    mouseout: () => setCursor(null),
+  })
+  if (!dol || !cursor) return null
+  const { x, y, zone, loc } = locate(dol, gameZones, [cursor.latlng.lat, cursor.latlng.lng])
+  return (
+    <div className="cursor-location">
+      {zone && loc && (
+        <>
+          <strong>{zone.name}</strong> · loc {loc[0]}, {loc[1]} ·{' '}
+        </>
+      )}
+      <span className="muted">
+        X {x} Y {y}
+      </span>
+    </div>
+  )
 }
 
 // Flies to the selected result, and clears the selection on a click on the map itself.
@@ -73,6 +104,7 @@ export default function MapView() {
       <ZoomControl position="bottomright" />
       <Suspense fallback={null}>
         <FitRegion />
+        <CursorLocation />
         {OVERLAYS.map(([key, Overlay]) => layers[key] && <Overlay key={key} />)}
       </Suspense>
       {/* Own pane (and canvas) so highlights stay above every other layer. Its canvas

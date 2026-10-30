@@ -1,6 +1,6 @@
-import type { LatLng, RegionData } from './data/types'
+import type { Entrance, LatLng, RegionData } from './data/types'
 
-export type ResultKind = 'mob' | 'npc' | 'entrance' | 'zone' | 'route'
+export type ResultKind = 'mob' | 'npc' | 'entrance' | 'zone' | 'route' | 'location'
 
 // One search result: entities sharing a name are grouped (a mob name usually
 // has many spawns), so `positions` holds every location to show.
@@ -11,6 +11,8 @@ export interface SearchResult {
   detail: string
   levels: [number, number] | null
   positions: LatLng[]
+  // Where an entrance leads.
+  target?: Entrance['target']
 }
 
 export interface LevelFilter {
@@ -64,7 +66,11 @@ export function buildIndex(data: RegionData): SearchResult[] {
   const results = new Map<string, SearchResult>()
   for (const [name, level, lat, lng] of data.mobs) group(results, 'mob', name, '', [lat, lng], parseLevel(level))
   for (const npc of data.npcs) group(results, 'npc', npc.name, npc.title, npc.pos)
-  for (const entrance of data.entrances) group(results, 'entrance', entrance.name, '', entrance.pos)
+  for (const entrance of data.entrances) {
+    group(results, 'entrance', entrance.name, '', entrance.pos)
+    const result = results.get(`entrance:${entrance.name}:`)!
+    result.target ??= entrance.target
+  }
   // Zones and routes are shown whole: their positions are their outline or path.
   for (const zone of data.zones) {
     results.set(`zone:${zone.name}`, { id: `zone:${zone.name}`, kind: 'zone', name: zone.name, detail: '', levels: null, positions: zone.bounds })
