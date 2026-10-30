@@ -17,11 +17,3 @@ export interface Entrance {
   name: string
   loc: LatLng
 }
-
-// Shape returned by the external mob search API (REST, react-admin style).
-export interface Mob {
-  _id: string
-  Name: string
-  loc: { coordinates: LatLng }
-  attributes: { type: string }
-}

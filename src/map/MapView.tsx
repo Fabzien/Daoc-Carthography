@@ -3,10 +3,8 @@ import { CRS, type LatLng } from 'leaflet'
 import { LayersControl, MapContainer, Marker, Popup, TileLayer, useMapEvents } from 'react-leaflet'
 import { DEFAULT_REGION, isRegionName, REGIONS } from '../data/regions'
 import { useMapStore } from '../store'
-import SearchControl from './SearchControl'
 import EntranceMarkers from './markers/EntranceMarkers'
 import HorseRoutes from './markers/HorseRoutes'
-import MobMarkers from './markers/MobMarkers'
 import ZoneRectangles from './markers/ZoneRectangles'
 
 // Keeps the store's region in sync with the base layer picked in the layers control.
@@ -48,8 +46,6 @@ export default function MapView() {
           </LayersControl.BaseLayer>
         ))}
       </LayersControl>
-      <SearchControl />
-      <MobMarkers />
       <ZoneRectangles />
       <EntranceMarkers />
       <HorseRoutes />

@@ -13,7 +13,6 @@ Daoc-Carthography is a "Google maps" like maps of Dark Age Of Camelot MMORPG (ht
 Feel free to suggest more features
 
 ## Features
-* Mobs markers
 * Donjons entrance markers
 * Horses lines markers
 * Zones markers
@@ -47,13 +46,7 @@ npm test           # Vitest
 npm run lint
 ```
 
-Mob search needs the URL of the mob API in a `.env.local` file:
-
-```
-VITE_API_ENDPOINT=https://example.com/mobs
-```
-
-Stack: Vite, React 19, TypeScript, react-leaflet, Zustand, MUI.
+Stack: Vite, React 19, TypeScript, react-leaflet, Zustand.
 
 ## 👏 Contributing
 More to come soon
