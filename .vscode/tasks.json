@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Started before the "Debug app" configurations; reused if already running.
+      "label": "vite: dev",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^__never_matches__$" },
+        "background": {
+          "beginsPattern": "VITE v",
+          "endsPattern": "ready in"
+        }
+      }
+    }
+  ]
+}

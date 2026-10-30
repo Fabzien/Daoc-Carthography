@@ -2,7 +2,10 @@
 
 # dependencies
 /node_modules
-/.vscode
+/.vscode/*
+!/.vscode/launch.json
+!/.vscode/tasks.json
+!/.vscode/extensions.json
 
 # testing
 /coverage
