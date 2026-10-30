@@ -1,4 +1,4 @@
-import type { NpcKind } from '../data/types'
+import type { Npc, NpcKind } from '../data/types'
 import type { ResultKind, SearchResult } from '../search'
 
 export const NPC_KINDS: Record<NpcKind, { color: string; label: string }> = {
@@ -12,6 +12,13 @@ export const NPC_KINDS: Record<NpcKind, { color: string; label: string }> = {
   crafting: { color: '#ff8c42', label: 'Crafting' },
   vault: { color: '#c0c0c0', label: 'Vault keeper' },
   other: { color: '#ffffff', label: 'NPC' },
+}
+
+// How many NPCs of each kind, in NPC_KINDS order, leaving out absent kinds.
+export function npcKindCounts(npcs: Npc[]): [NpcKind, number][] {
+  const counts = new Map<NpcKind, number>()
+  for (const npc of npcs) counts.set(npc.kind, (counts.get(npc.kind) ?? 0) + 1)
+  return (Object.keys(NPC_KINDS) as NpcKind[]).filter((kind) => counts.has(kind)).map((kind) => [kind, counts.get(kind)!])
 }
 
 export const RESULT_KINDS: Record<ResultKind, { color: string; label: string }> = {

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { DEFAULT_REGION, type RegionName } from './data/regions'
-import type { LatLng } from './data/types'
+import type { LatLng, NpcKind } from './data/types'
 import { ANY_LEVEL, isAnyLevel, type LevelFilter, type SearchResult } from './search'
 
 export type LayerKey = 'zones' | 'entrances' | 'routes' | 'npcs' | 'mobs' | 'bindPoints'
@@ -21,6 +21,10 @@ interface MapState {
   toggleLayer: (layer: LayerKey) => void
   setQuery: (query: string) => void
   setLevels: (levels: LevelFilter) => void
+  // NPC kinds hidden from the map by the NPC legend.
+  hiddenNpcKinds: NpcKind[]
+  toggleNpcKind: (kind: NpcKind) => void
+  showAllNpcKinds: () => void
   select: (result: SearchResult | null) => void
 }
 
@@ -44,4 +48,8 @@ export const useMapStore = create<MapState>()((set) => ({
   // Filtering by level is about mobs: show them so the filter is visible on the map.
   setLevels: (levels) => set((s) => ({ levels, layers: isAnyLevel(levels) ? s.layers : { ...s.layers, mobs: true } })),
   select: (selected) => set({ selected }),
+  hiddenNpcKinds: [],
+  toggleNpcKind: (kind) =>
+    set((s) => ({ hiddenNpcKinds: s.hiddenNpcKinds.includes(kind) ? s.hiddenNpcKinds.filter((k) => k !== kind) : [...s.hiddenNpcKinds, kind] })),
+  showAllNpcKinds: () => set({ hiddenNpcKinds: [] }),
 }))

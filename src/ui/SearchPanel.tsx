@@ -5,7 +5,7 @@ import { getRegion, isRegionName, type RegionName } from '../data/regions'
 import { useEnter } from '../map/overlays/useEnter'
 import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
-import { describe, levelColor, RESULT_KINDS, ROUTE_COLORS } from './kinds'
+import { describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS } from './kinds'
 
 const RESULT_LIMIT = 100
 
@@ -80,6 +80,40 @@ function LayerChips() {
           {label}
         </button>
       ))}
+    </div>
+  )
+}
+
+// Legend of the NPC colors, doubling as a filter: each chip shows or hides a kind.
+function NpcKindFilter() {
+  const { npcs } = useRegionData()
+  const hidden = useMapStore((s) => s.hiddenNpcKinds)
+  const toggleNpcKind = useMapStore((s) => s.toggleNpcKind)
+  const showAllNpcKinds = useMapStore((s) => s.showAllNpcKinds)
+  const counts = useMemo(() => npcKindCounts(npcs), [npcs])
+  if (counts.length === 0) return null
+
+  return (
+    <div className="npc-kinds" role="group" aria-label="NPC kinds">
+      <span>
+        NPCs
+        {hidden.length > 0 && (
+          <button className="link-button" onClick={showAllNpcKinds}>
+            Show all
+          </button>
+        )}
+      </span>
+      <div className="chips">
+        {counts.map(([kind, count]) => {
+          const on = !hidden.includes(kind)
+          return (
+            <button key={kind} className={`chip chip-small${on ? '' : ' chip-off'}`} aria-pressed={on} onClick={() => toggleNpcKind(kind)}>
+              <span className="dot" style={{ background: NPC_KINDS[kind].color }} />
+              {NPC_KINDS[kind].label} <small>{count}</small>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -202,11 +236,13 @@ function Results() {
 }
 
 export default function SearchPanel() {
+  const showNpcKinds = useMapStore((s) => s.layers.npcs)
   return (
     <aside className="panel">
       <SearchBox />
       <LayerChips />
       <LevelFilter />
+      <Suspense fallback={null}>{showNpcKinds && <NpcKindFilter />}</Suspense>
       <Suspense fallback={<p className="panel-note">Loading map data…</p>}>
         <Results />
       </Suspense>

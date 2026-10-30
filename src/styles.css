@@ -129,6 +129,43 @@ input {
   color: var(--accent);
 }
 
+.npc-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+
+.npc-kinds > span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.chip-small {
+  height: 26px;
+  padding: 0 10px;
+  box-shadow: none;
+  font-size: 12px;
+}
+
+.chip-small small {
+  color: var(--muted);
+}
+
+/* A hidden NPC kind: struck through, dot faded. */
+.chip-off {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.chip-off .dot {
+  opacity: 0.3;
+}
+
 .dot {
   display: inline-block;
   flex: none;

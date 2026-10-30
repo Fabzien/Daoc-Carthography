@@ -48,6 +48,7 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 - [src/search.ts](src/search.ts) is the pure search logic: `buildIndex()` groups entities by name (a mob name has many spawns) into `SearchResult`s with every position; `search()` filters by name/title and level.
 - [src/ui/](src/ui/) is the Google Maps-like chrome outside the map: `SearchPanel` (search box, layer chips, level filter, results, place card) and `RegionSwitcher` (bottom-left map picker using each map's zoom-0 tile as thumbnail). `kinds.ts` holds shared colors and labels.
 - [src/map/MapView.tsx](src/map/MapView.tsx) renders one `TileLayer` for the store's region (no Leaflet layers control) and the overlays in [src/map/overlays/](src/map/overlays/) whose layer is on. `FitRegion` frames the drawn map on region change; `SelectionController` flies to the selection and clears it on a map click.
+- When the NPCs layer is on, `NpcKindFilter` in the search panel is the legend of NPC colors (`NPC_KINDS`, with counts from `npcKindCounts`) and a filter: each chip hides or shows a kind on the map (store `hiddenNpcKinds`, applied by `NpcsOverlay`; search results are not filtered).
 - Mobs, NPCs and bind points use `CircleMarkers`, which builds Leaflet circle markers imperatively on the canvas renderer (`preferCanvas`) because there are up to ~16k per region. Clicking one selects its search result by id (`useSelectById`); markers set `bubblingMouseEvents: false` so the map click doesn't clear it. The mobs overlay is narrowed by the query and level filter.
 - Entrances with a `target` open that map on click (`useEnter` → store `enter()`, which selects the arrival point; `FitRegion` then yields to `SelectionController`).
 - [src/coords.ts](src/coords.ts): `locate()` (game coordinates, zone and `/loc` of a map point, via `toGame()`), `parseCoordinates()` and `coordinateResults()` for coordinates typed in the search box. `CursorLocation` in `MapView.tsx` shows the position under the cursor. Enter in the search box selects the first result (store `submits`).
@@ -60,7 +61,6 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 ## Known gaps
 
 - Frontiers calibration comes only from the map's bounding box (routes do follow its rivers); the others are cross-checked by several methods.
-- NPC kinds have no legend; their tooltip shows the title or kind.
 - Search covers the current map only.
 
 ## Improvement ideas
@@ -78,7 +78,6 @@ Backlog of suggested improvements, roughly by priority. Remove an item once it's
 
 **Game content**
 - Mob con colors relative to the player's level (gray/green/blue/yellow/orange/red/purple), like the original Cartographe.
-- Legend for NPC kinds, and an NPC filter by kind (merchants, trainers…).
 - Decode DAoC Cartographe's community annotations (`database/Francais/master_daoc.loc` in the archive, zlib-compressed, ~1.5 MB, in French): quests, spots, tips.
 - Dungeons: split floors by mob Z (Darkness Falls, Spindelhalla); calibrate Treibh Caillte, Tur Suil and Sobekite Eternal with a manual two-point tool; maps for unlinked entrance targets (Labyrinth, Abandoned Mines, Demon's Breach…).
 
