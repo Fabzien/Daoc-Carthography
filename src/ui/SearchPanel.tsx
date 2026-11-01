@@ -5,13 +5,14 @@ import { getRegion, isRegionName, type RegionName } from '../data/regions'
 import { useEnter } from '../map/overlays/useEnter'
 import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
-import { describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS } from './kinds'
+import { BOSS_TIERS, describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS } from './kinds'
 import { npcBadgeHtml } from './badges'
 
 const RESULT_LIMIT = 100
 
 const LAYER_CHIPS: { key: LayerKey; label: string; color: string }[] = [
   { key: 'mobs', label: 'Mobs', color: RESULT_KINDS.mob.color },
+  { key: 'bosses', label: 'Bosses', color: BOSS_TIERS[2].color },
   { key: 'npcs', label: 'NPCs', color: RESULT_KINDS.npc.color },
   { key: 'entrances', label: 'Dungeons', color: RESULT_KINDS.entrance.color },
   { key: 'routes', label: 'Routes', color: ROUTE_COLORS.horse },
@@ -20,6 +21,7 @@ const LAYER_CHIPS: { key: LayerKey; label: string; color: string }[] = [
 ]
 
 function resultColor(result: SearchResult): string {
+  if (result.tier) return BOSS_TIERS[result.tier].color
   return result.kind === 'mob' ? levelColor(result.levels) : RESULT_KINDS[result.kind].color
 }
 

@@ -21,6 +21,8 @@ export default function MobsOverlay() {
   const { mobs } = useRegionData()
   const query = useDeferredValue(useMapStore((s) => s.query))
   const levels = useDeferredValue(useMapStore((s) => s.levels))
+  // Bosses have a layer of their own; draw them here only when it's off.
+  const bossesShown = useMapStore((s) => s.layers.bosses)
   const selectById = useSelectById()
   const map = useMap()
   const [zoom, setZoom] = useState(() => map.getZoom())
@@ -28,13 +30,14 @@ export default function MobsOverlay() {
 
   const points = useMemo<MobPoint[]>(() => {
     const result: MobPoint[] = []
-    for (const [name, level, lat, lng] of mobs) {
+    for (const [name, level, lat, lng, tier] of mobs) {
+      if (tier && bossesShown) continue
       const parsed = parseLevel(level)
       if (!nameMatches(name, query) || !levelMatches(parsed, levels)) continue
       result.push({ id: `mob:${name}:`, pos: [lat, lng], color: levelColor(parsed), label: `${name} (${level})`, levels: parsed })
     }
     return result
-  }, [mobs, query, levels])
+  }, [mobs, query, levels, bossesShown])
 
   const { singles, clusters } = useMemo(() => {
     if (zoom > CLUSTER_MAX_ZOOM) return { singles: points, clusters: [] }

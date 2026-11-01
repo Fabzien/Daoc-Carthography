@@ -6,6 +6,7 @@ import { useRegionData } from '../data/regionData'
 import { getRegion } from '../data/regions'
 import { useMapStore, type LayerKey } from '../store'
 import BindPointsOverlay from './overlays/BindPointsOverlay'
+import BossesOverlay from './overlays/BossesOverlay'
 import EntrancesOverlay from './overlays/EntrancesOverlay'
 import MobsOverlay from './overlays/MobsOverlay'
 import NpcsOverlay from './overlays/NpcsOverlay'
@@ -18,6 +19,7 @@ const OVERLAYS: [LayerKey, ComponentType][] = [
   ['zones', ZonesOverlay],
   ['routes', RoutesOverlay],
   ['mobs', MobsOverlay],
+  ['bosses', BossesOverlay],
   ['npcs', NpcsOverlay],
   ['bindPoints', BindPointsOverlay],
   ['entrances', EntrancesOverlay],

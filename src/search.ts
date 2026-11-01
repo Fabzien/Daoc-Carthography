@@ -1,4 +1,4 @@
-import type { Entrance, LatLng, RegionData } from './data/types'
+import type { Entrance, LatLng, MobTier, RegionData } from './data/types'
 
 export type ResultKind = 'mob' | 'npc' | 'entrance' | 'zone' | 'route' | 'location'
 
@@ -13,6 +13,8 @@ export interface SearchResult {
   positions: LatLng[]
   // Where an entrance leads.
   target?: Entrance['target']
+  // For a notable mob: named boss or epic encounter.
+  tier?: MobTier
 }
 
 export interface LevelFilter {
@@ -64,7 +66,10 @@ function group(
 // Every searchable entity of a region, grouped by name.
 export function buildIndex(data: RegionData): SearchResult[] {
   const results = new Map<string, SearchResult>()
-  for (const [name, level, lat, lng] of data.mobs) group(results, 'mob', name, '', [lat, lng], parseLevel(level))
+  for (const [name, level, lat, lng, tier] of data.mobs) {
+    group(results, 'mob', name, '', [lat, lng], parseLevel(level))
+    if (tier) results.get(`mob:${name}:`)!.tier = tier
+  }
   for (const npc of data.npcs) group(results, 'npc', npc.name, npc.title, npc.pos)
   for (const entrance of data.entrances) {
     group(results, 'entrance', entrance.name, '', entrance.pos)

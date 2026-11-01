@@ -25,6 +25,7 @@ Toggleable layers, generated from the [Dawn of Light](https://github.com/Dawn-of
 * Horse and boat routes
 * NPCs (merchants, trainers, healers, stable masters, guards...)
 * Mobs, colored by level
+* Bosses: epic encounters (realm dragons, Apocalypse, Queen Kula…) and named bosses, always shown
 * Bind points
 
 ## Zones

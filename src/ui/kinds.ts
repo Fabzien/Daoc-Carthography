@@ -1,4 +1,4 @@
-import type { Npc, NpcKind } from '../data/types'
+import type { MobTier, Npc, NpcKind } from '../data/types'
 import type { ResultKind, SearchResult } from '../search'
 
 export const NPC_KINDS: Record<NpcKind, { color: string; label: string }> = {
@@ -20,6 +20,11 @@ export function npcKindCounts(npcs: Npc[]): [NpcKind, number][] {
   const counts = new Map<NpcKind, number>()
   for (const npc of npcs) counts.set(npc.kind, (counts.get(npc.kind) ?? 0) + 1)
   return (Object.keys(NPC_KINDS) as NpcKind[]).filter((kind) => counts.has(kind)).map((kind) => [kind, counts.get(kind)!])
+}
+
+export const BOSS_TIERS: Record<MobTier, { color: string; label: string }> = {
+  1: { color: '#c62828', label: 'Named boss' },
+  2: { color: '#7b1fa2', label: 'Epic encounter' },
 }
 
 export const RESULT_KINDS: Record<ResultKind, { color: string; label: string }> = {
@@ -49,7 +54,7 @@ export function describe(result: SearchResult): string {
   switch (result.kind) {
     case 'mob': {
       const spawns = result.positions.length
-      return `Mob · ${formatLevels(result.levels)} · ${spawns} spawn${spawns > 1 ? 's' : ''}`
+      return `${result.tier ? BOSS_TIERS[result.tier].label : 'Mob'} · ${formatLevels(result.levels)} · ${spawns} spawn${spawns > 1 ? 's' : ''}`
     }
     case 'npc':
       return result.detail ? `NPC · ${result.detail}` : 'NPC'

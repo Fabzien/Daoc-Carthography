@@ -1,5 +1,5 @@
 import { REGIONS, toMap } from '../../src/data/regions.ts'
-import { buildRegionData, npcKind, routeName, type DolMob, type DolTables } from './transform.ts'
+import { buildRegionData, mobTier, npcKind, routeName, type DolMob, type DolTables } from './transform.ts'
 
 const albion = REGIONS.find((r) => r.name === 'Albion-Classic')!
 const ZONE = 8192
@@ -7,7 +7,7 @@ const ZONE = 8192
 const inZone = { X: 70 * ZONE, Y: 62 * ZONE }
 
 function mob(overrides: Partial<DolMob>): DolMob {
-  return { Name: 'wolf', Guild: '', ...inZone, Region: 1, Level: 10, Realm: 0, ClassType: 'DOL.GS.GameNPC', NPCTemplateID: 0, ...overrides }
+  return { Name: 'wolf', Guild: '', ...inZone, Region: 1, Level: 10, Realm: 0, ClassType: 'DOL.GS.GameNPC', NPCTemplateID: 0, Flags: 0, AggroLevel: 50, ...overrides }
 }
 
 function tables(overrides: Partial<DolTables>): DolTables {
@@ -44,6 +44,21 @@ describe('routeName', () => {
 
   it('falls back to a readable path id', () => {
     expect(routeName('Dragonfly_ticket_to_Castle_Sauvage')).toBe('Dragonfly Ticket To Castle Sauvage')
+  })
+})
+
+describe('mobTier', () => {
+  it('marks listed epic encounters, including name variants', () => {
+    expect(mobTier('Golestandt', 80, 1, 80)).toBe(2)
+    expect(mobTier('Third Head of Myrddraxis', 80, 1, 80)).toBe(2)
+  })
+
+  it('marks unique, hostile, high-level named mobs as named bosses', () => {
+    expect(mobTier('Prince Abdin', 78, 1, 80)).toBe(1)
+    expect(mobTier('Olen den Bartender', 67, 1, 0)).toBeUndefined()
+    expect(mobTier('legionarius', 70, 1, 80)).toBeUndefined()
+    expect(mobTier('Granite Giant', 70, 12, 80)).toBeUndefined()
+    expect(mobTier('Mob Boss', 60, 1, 80)).toBeUndefined()
   })
 })
 
@@ -174,5 +189,15 @@ describe('buildRegionData', () => {
     // The entrance to the city stays on this map, arriving in the city.
     expect(data.entrances[0].target).toEqual({ map: 'Albion-Classic', pos: toMap(camelot, middle.X, middle.Y) })
     expect(data.gameZones.find((z) => z.name === 'City of Camelot')?.area?.scale).toBe(camelot.scale)
+  })
+
+  it('marks bosses on mobs and turns peaceful realm-0 creatures into NPCs', () => {
+    const data = buildRegionData(
+      albion,
+      tables({ mobs: [mob({ Name: 'Golestandt', Level: 80 }), mob({ Name: 'Explorer Tegena', Level: 80, Flags: 16 })] }),
+      'test',
+    )
+    expect(data.mobs).toEqual([['Golestandt', '80', expect.any(Number), expect.any(Number), 2]])
+    expect(data.npcs.map((n) => n.name)).toEqual(['Explorer Tegena'])
   })
 })

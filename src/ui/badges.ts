@@ -1,6 +1,6 @@
-import { Anvil, createElement, DoorOpen, GraduationCap, HandCoins, HeartPulse, Shield, Ship, Sparkles, User, Vault, type IconNode } from 'lucide'
-import type { NpcKind } from '../data/types'
-import { NPC_KINDS, RESULT_KINDS } from './kinds'
+import { Anvil, createElement, Crown, DoorOpen, GraduationCap, HandCoins, HeartPulse, Shield, Ship, Skull, Sparkles, User, Vault, type IconNode } from 'lucide'
+import type { MobTier, NpcKind } from '../data/types'
+import { BOSS_TIERS, NPC_KINDS, RESULT_KINDS } from './kinds'
 
 // Round badges with a white pictogram, used as map icons (Leaflet div icons)
 // and in the legend. Pictograms are Lucide icons (ISC license), or an image
@@ -43,6 +43,11 @@ function badgeHtml(color: string, pictogram: Pictogram, className = ''): string 
 
 export function npcBadgeHtml(kind: NpcKind): string {
   return badgeHtml(NPC_KINDS[kind].color, NPC_PICTOGRAMS[kind])
+}
+
+// Notable mobs: a crown for epic encounters, a skull for named bosses.
+export function bossBadgeHtml(tier: MobTier): string {
+  return badgeHtml(BOSS_TIERS[tier].color, tier === 2 ? Crown : Skull)
 }
 
 // Entrances to places without a map can't be entered: their badge is faded.

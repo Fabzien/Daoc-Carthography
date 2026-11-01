@@ -1,6 +1,6 @@
 // Pure transformations from DOL database tables to the map's RegionData.
 import { REGIONS, toMap, type Calibration, type Region } from '../../src/data/regions.ts'
-import type { Entrance, GameZone, LatLng, Npc, NpcKind, RegionData, Route, Zone } from '../../src/data/types.ts'
+import type { Entrance, GameZone, LatLng, MobTier, Npc, NpcKind, RegionData, Route, Zone } from '../../src/data/types.ts'
 
 // Subsets of the DOL tables (see DOLDatabase/Tables in DOLSharp) used here.
 export interface DolMob {
@@ -13,6 +13,8 @@ export interface DolMob {
   Realm: number
   ClassType: string
   NPCTemplateID: number
+  Flags: number
+  AggroLevel: number
 }
 export interface DolNpcTemplate {
   TemplateId: number
@@ -81,6 +83,45 @@ const NPC_KINDS: [RegExp, NpcKind][] = [
   [/Blacksmith|Enchanter|Recharger/, 'crafting'],
   [/VaultKeeper/, 'vault'],
 ]
+
+// DOL's eFlags.PEACE: the NPC can't be attacked.
+const PEACE_FLAG = 16
+const NAMED_BOSS_MIN_LEVEL = 65
+
+// Raid encounters DOL doesn't mark as such (only the three realm dragons have a
+// script of their own). Names as in DOL; a name matches its variants too
+// ("Myrddraxis" matches "Third Head of Myrddraxis").
+export const EPIC_ENCOUNTERS = [
+  'Golestandt',
+  'Gjalpinulva',
+  'Cuuldurach the Glimmer King',
+  'Apocalypse',
+  'Lord Sanguis',
+  'Bane of Hope',
+  'Queen Kula',
+  'King Tuscar',
+  'Hurika',
+  'Grand Summoner Govannon',
+  'Olcasgean',
+  'Xanxicar',
+  'Myrddraxis',
+  'Kraken',
+  'Nosdoden',
+  'Green Knight',
+]
+
+// Tier of a hostile mob: an epic encounter from the list above, or a named
+// boss: a capitalized name with a single spawn in the whole database, level 65+
+// and aggressive (quest and event NPCs are peaceful or non-aggressive).
+export function mobTier(name: string, maxLevel: number, spawnsOfName: number, aggroLevel: number): MobTier | undefined {
+  if (EPIC_ENCOUNTERS.some((epic) => name === epic || name.endsWith(` ${epic}`))) return 2
+  if (spawnsOfName === 1 && /^[A-Z]/.test(name) && maxLevel >= NAMED_BOSS_MIN_LEVEL && aggroLevel > 0) return 1
+  return undefined
+}
+
+function maxLevelOf(level: string): number {
+  return Math.max(0, ...(level.match(/\d+/g) ?? []).map(Number))
+}
 
 // Service NPC kind from the mob's ClassType, or null for a plain GameNPC.
 export function npcKind(classType: string): NpcKind | null {
@@ -152,6 +193,10 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   }
 
   const templates = new Map(tables.templates.map((t) => [t.TemplateId, t]))
+  const nameOf = (m: DolMob) => m.Name || templates.get(m.NPCTemplateID)?.Name || '?'
+  // Spawns per hostile mob name across the whole database, to recognize unique named mobs.
+  const spawnsByName = new Map<string, number>()
+  for (const m of tables.mobs) if (m.Realm === 0) spawnsByName.set(nameOf(m), (spawnsByName.get(nameOf(m)) ?? 0) + 1)
   const mobs: RegionData['mobs'] = []
   const npcs: Npc[] = []
   const masters: { x: number; y: number; kind: NpcKind }[] = []
@@ -160,10 +205,13 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     const p = place(m.Region, m.X, m.Y)
     if (!p) continue
     const template = templates.get(m.NPCTemplateID)
-    const name = m.Name || template?.Name || '?'
+    const name = nameOf(m)
     const kind = npcKind(m.ClassType)
-    if (kind === null && m.Realm === 0) {
-      mobs.push([name, m.Level > 0 ? String(m.Level) : (template?.Level ?? '?'), p[0], p[1]])
+    // Peaceful realm-0 creatures are quest or event NPCs, not mobs.
+    if (kind === null && m.Realm === 0 && !(m.Flags & PEACE_FLAG)) {
+      const level = m.Level > 0 ? String(m.Level) : (template?.Level ?? '?')
+      const tier = mobTier(name, maxLevelOf(level), spawnsByName.get(name) ?? 0, m.AggroLevel)
+      mobs.push(tier ? [name, level, p[0], p[1], tier] : [name, level, p[0], p[1]])
     } else {
       npcs.push({ name, title: m.Guild ?? '', kind: kind ?? 'other', pos: p })
       // Paths are in the map's own region coordinates.

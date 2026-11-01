@@ -9,6 +9,7 @@ const data: RegionData = {
     ['wolf', '14', -61, 131],
     ['werewolf', '45', -70, 140],
     ['bandit', '?', -65, 135],
+    ['Golestandt', '80', -80, 150, 2],
   ],
   npcs: [{ name: 'Raguel', title: 'Armor Merchant', kind: 'merchant', pos: [-62, 132] }],
   routes: [{ name: 'Camelot → Humberton', kind: 'horse', path: [[-60, 130], [-70, 140]] }],
@@ -56,5 +57,12 @@ describe('search', () => {
 
   it('returns nothing without a query or level filter', () => {
     expect(search(index, '  ', ANY_LEVEL)).toEqual([])
+  })
+})
+
+describe('notable mobs', () => {
+  it('carries the boss tier into the search result', () => {
+    expect(search(index, 'golestandt', ANY_LEVEL)[0]).toMatchObject({ kind: 'mob', tier: 2 })
+    expect(search(index, 'wolf', ANY_LEVEL)[0].tier).toBeUndefined()
   })
 })
