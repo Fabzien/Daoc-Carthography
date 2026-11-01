@@ -37,33 +37,38 @@ export interface RegionDefinition {
   plan?: string
   // DOL RegionID of a map without calibration, so entrances can still lead to it.
   dolRegion?: number
-  // Other DOL regions drawn on this map, with their own calibration onto it:
-  // the capitals, drawn enlarged in one zone square of the classic maps.
-  embedded?: readonly EmbeddedRegion[]
+  // Capitals drawn on this map, each in a zone square of its own.
+  drawnCities?: readonly DrawnCity[]
 }
 
-export interface EmbeddedRegion {
+// A capital is a DOL region of its own, drawn on its realm's classic map as
+// the game's current (post-2005) zone map, at the same scale as the overland
+// zones. Its calibration there is exact, which gives the in-game /loc inside
+// the city. The DOL database places the city's NPCs in the old, much smaller
+// layout, so they are not drawn here but on the city's own map (`map`, an
+// old-layout floor plan), which the drawing links to.
+export interface DrawnCity {
   region: number
-  // Map bounds of the square it's drawn in: entities outside it are dropped.
+  map: string
+  // Map bounds of the zone square it's drawn in.
   bounds: readonly [LatLng, LatLng]
   scale: number
   offset: readonly [number, number]
 }
 
-// A capital drawn in the zone square at `cell` (zone offset) of a map whose
-// calibration is `host`. `fit` was found by matching the city's DOL mob and
-// NPC positions to the drawing's silhouette at zoom 4 (16 px per map unit),
-// then checked against the city gates: game units per pixel, then the game X
-// and Y of the square's top-left pixel.
-function embeddedCity(region: number, host: { offset: readonly [number, number] }, cell: readonly [number, number], fit: readonly [number, number, number]): EmbeddedRegion {
-  const left = cell[0] * 4 + host.offset[0]
-  const top = cell[1] * 4 + host.offset[1]
-  const scale = fit[0] * 16
-  return { region, bounds: [[-top, left], [-(top + 32), left + 32]], scale, offset: [left - fit[1] / scale, top - fit[2] / scale] }
+// A capital whose zone (DOL zone offset 1,1) is drawn in the square at zone
+// offset `cell` of a map calibrated with `host`.
+function drawnCity(region: number, map: string, host: { offset: readonly [number, number] }, cell: readonly [number, number]): DrawnCity {
+  // Rounded like toMap(), to keep float noise out of the generated data.
+  const left = Math.round((cell[0] * 4 + host.offset[0]) * 100) / 100
+  const top = Math.round((cell[1] * 4 + host.offset[1]) * 100) / 100
+  // Same scale as the overland zones; the city zone's origin (8192, 8192) is 4 map units in.
+  return { region, map, bounds: [[-top, left], [-(top + 32), left + 32]], scale: 2048, offset: [left - 4, top - 4] }
 }
 
 const ALBION_CLASSIC = { region: 1, scale: 2048, offset: [-140.4, -180.2] } as const
 const HIBERNIA_CLASSIC = { region: 200, scale: 2048, offset: [-108.0, -204.0] } as const
+const MIDGARD_CLASSIC = { region: 100, scale: 2048, offset: [-282.0, -311.6] } as const
 
 // A DAoC Cartographe floor plan (dungeon or capital city), shown whole as a
 // 256-unit map. `fit` is its calibration, found by matching DOL mob positions
@@ -86,11 +91,11 @@ function plan<const N extends string>(name: N, label: string, group: RegionGroup
 // import-cartographe.ts), so their offset follows from their top-left zone:
 // a zone offset unit (8192 game units) is 4 map units.
 const DEFINITIONS = [
-  { name: 'Albion-Classic', label: 'Albion · Classic', group: 'Albion', tiles: '/maps/albion/classic/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: ALBION_CLASSIC, embedded: [embeddedCity(10, ALBION_CLASSIC, [59, 61], [20.574, 30147, 21695])] },
+  { name: 'Albion-Classic', label: 'Albion · Classic', group: 'Albion', tiles: '/maps/albion/classic/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: ALBION_CLASSIC, drawnCities: [drawnCity(10, 'Camelot', ALBION_CLASSIC, [59, 61])] },
   { name: 'Albion-SI', label: 'Albion · Shrouded Isles', group: 'Albion', tiles: '/maps/albion/SI/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: { region: 51, scale: 2048, offset: [-112.0, -174.6] } },
-  { name: 'Hibernian-Classic', label: 'Hibernia · Classic', group: 'Hibernia', tiles: '/maps/hibernian/classic/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: HIBERNIA_CLASSIC, embedded: [embeddedCity(201, HIBERNIA_CLASSIC, [31, 59], [30.584, 19679, 24187])] },
+  { name: 'Hibernian-Classic', label: 'Hibernia · Classic', group: 'Hibernia', tiles: '/maps/hibernian/classic/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: HIBERNIA_CLASSIC, drawnCities: [drawnCity(201, 'Tir-na-Nog', HIBERNIA_CLASSIC, [31, 59])] },
   { name: 'Hibernian-SI', label: 'Hibernia · Shrouded Isles', group: 'Hibernia', tiles: '/maps/hibernian/SI/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: { region: 181, scale: 2048, offset: [-126.3, -80.1] } },
-  { name: 'Midgard-Classic', label: 'Midgard · Classic', group: 'Midgard', tiles: '/maps/midgard/classic/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: { region: 100, scale: 2048, offset: [-282.0, -311.6] } },
+  { name: 'Midgard-Classic', label: 'Midgard · Classic', group: 'Midgard', tiles: '/maps/midgard/classic/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: MIDGARD_CLASSIC, drawnCities: [drawnCity(101, 'Jordheim', MIDGARD_CLASSIC, [96, 90])] },
   { name: 'Midgard-SI', label: 'Midgard · Shrouded Isles', group: 'Midgard', tiles: '/maps/midgard/SI/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: { region: 151, scale: 1024, offset: [-240.3, -238.7] } },
   { name: 'Frontiers', label: 'New Frontiers', group: 'Frontiers', tiles: '/maps/frontiers/tiles/{z}/{x}/{y}.png', maxNativeZoom: 7, dol: { region: 163, scale: 2048, offset: [-174.2, -144.0] } },
 
@@ -129,9 +134,11 @@ const DEFINITIONS = [
   { name: 'Molvik', label: 'Molvik (35–39)', group: 'Battlegrounds', tiles: '/maps/battlegrounds/molvik/tiles/{z}/{x}/{y}.png', maxNativeZoom: 4, dol: { region: 241, scale: 2048, offset: [-256, -256] }, extent: 32, drawnZones: ['Molvik'] },
   { name: 'Leirvik', label: 'Leirvik (40–44)', group: 'Battlegrounds', tiles: '/maps/battlegrounds/leirvik/tiles/{z}/{x}/{y}.png', maxNativeZoom: 4, dol: { region: 242, scale: 2048, offset: [-128, -128] }, extent: 32, drawnZones: ['Leirvik'] },
   // Dungeons and capitals: DAoC Cartographe floor plans. See plan() for `fit`.
-  // Camelot and Tir na Nog are drawn on the classic maps (see `embedded`);
-  // Jordheim isn't drawn on Midgard's, so it keeps its own map.
-  plan('Jordheim', 'Jordheim', 'Midgard', '1002', 101, [15.895, 24928, 24979]),
+  // Capitals' NPCs, on old-layout plans matching the DOL database's geometry
+  // (the classic maps draw the current cities, see `drawnCities`).
+  plan('Camelot', 'Camelot · old layout', 'Albion', '1000', 10, [19.043, 25990, 20236]),
+  plan('Tir-na-Nog', 'Tir na Nóg · old layout', 'Hibernia', '1001', 201, [32.694, 14985, 17646]),
+  plan('Jordheim', 'Jordheim · old layout', 'Midgard', '1002', 101, [15.895, 24928, 24979]),
   plan('Catacombs-of-Cardova', 'Catacombs of Cardova', 'Albion dungeons', 'D_Alb_01', 23, [16.547, 25685, 28828]),
   plan('Tepoks-Mine', "Tepok's Mine", 'Albion dungeons', 'D_Alb_02', 24, [12.318, 25537, 23706]),
   plan('Tomb-of-Mithra', 'Tomb of Mithra', 'Albion dungeons', 'D_Alb_03', 21, [13.65, 19884, 26984]),
@@ -193,7 +200,7 @@ export function thumbnailUrl(region: Region): string {
 }
 
 // Converts DOL game coordinates to map coordinates, rounded to 1/100 of a map unit.
-// Game coordinates -> map coordinates of a region: a map's `dol`, or an embedded region.
+// Game coordinates -> map coordinates of a region: a map's `dol`, or a drawn city.
 export type Calibration = { scale: number; offset: readonly [number, number] }
 
 export function toMap(dol: Calibration, x: number, y: number): LatLng {

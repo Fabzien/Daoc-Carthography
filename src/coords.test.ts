@@ -48,7 +48,7 @@ describe('coordinateResults', () => {
   })
 })
 
-describe('locate in an embedded capital', () => {
+describe('locate in a drawn capital', () => {
   it("uses the capital's own coordinates inside its square", () => {
     const area = { bounds: [[-10, 10], [-42, 42]] as [LatLng, LatLng], scale: 300, offset: [0, 0] as [number, number] }
     const city: GameZone = { name: 'City of Camelot', origin: [8192, 8192], size: [65536, 65536], area }

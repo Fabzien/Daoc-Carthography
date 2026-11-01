@@ -19,12 +19,12 @@ function inZone(zone: GameZone, x: number, y: number): boolean {
   return x >= zone.origin[0] && x < zone.origin[0] + zone.size[0] && y >= zone.origin[1] && y < zone.origin[1] + zone.size[1]
 }
 
-// Inside the square of an embedded region (a capital), the coordinates are that
+// Inside the square of a drawn capital, the coordinates are that
 // region's; elsewhere, the map's own.
 export function locate(dol: Calibration, zones: GameZone[], pos: LatLng): GameLocation {
-  const embedded = zones.find((z) => z.area && within(z.area.bounds, pos))
-  const [x, y] = toGame(embedded?.area ?? dol, pos)
-  const zone = embedded ?? zones.find((z) => !z.area && inZone(z, x, y)) ?? null
+  const city = zones.find((z) => z.area && within(z.area.bounds, pos))
+  const [x, y] = toGame(city?.area ?? dol, pos)
+  const zone = city ?? zones.find((z) => !z.area && inZone(z, x, y)) ?? null
   return { x, y, zone, loc: zone && inZone(zone, x, y) ? [x - zone.origin[0], y - zone.origin[1]] : null }
 }
 

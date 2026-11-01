@@ -128,3 +128,56 @@ export function extractTile(raster: Raster, tx: number, ty: number, size = 256):
   }
   return empty ? null : tile
 }
+
+// Draws `src` scaled into the rectangle (x, y, width, height) of `dst`, given in
+// `dst` pixels and possibly fractional; pixels outside `dst` are skipped. Each
+// destination pixel averages the source area it covers when shrinking, and
+// interpolates bilinearly when enlarging. The result is opaque.
+export function drawScaled(dst: Raster, src: Raster, x: number, y: number, width: number, height: number): void {
+  const sx = src.width / width
+  const sy = src.height / height
+  // Summed-area table of the source, for constant-time box averages.
+  const w = src.width + 1
+  const sums = new Float64Array(w * (src.height + 1) * 3)
+  for (let row = 1; row <= src.height; row++) {
+    for (let col = 1; col <= src.width; col++) {
+      const s = ((row - 1) * src.width + (col - 1)) * 4
+      for (let c = 0; c < 3; c++) {
+        sums[(row * w + col) * 3 + c] = src.data[s + c] + sums[((row - 1) * w + col) * 3 + c] + sums[(row * w + col - 1) * 3 + c] - sums[((row - 1) * w + col - 1) * 3 + c]
+      }
+    }
+  }
+  const box = (u0: number, v0: number, u1: number, v1: number, c: number) => {
+    const area = (u1 - u0) * (v1 - v0)
+    return (sums[(v1 * w + u1) * 3 + c] - sums[(v0 * w + u1) * 3 + c] - sums[(v1 * w + u0) * 3 + c] + sums[(v0 * w + u0) * 3 + c]) / area
+  }
+  const at = (u: number, v: number, c: number) => src.data[(v * src.width + u) * 4 + c]
+
+  for (let dy = Math.max(0, Math.floor(y)); dy < Math.min(dst.height, Math.ceil(y + height)); dy++) {
+    for (let dx = Math.max(0, Math.floor(x)); dx < Math.min(dst.width, Math.ceil(x + width)); dx++) {
+      // Source footprint of this destination pixel.
+      const u0 = (dx - x) * sx
+      const v0 = (dy - y) * sy
+      const o = (dy * dst.width + dx) * 4
+      for (let c = 0; c < 3; c++) {
+        if (sx > 1 || sy > 1) {
+          const ua = Math.max(0, Math.floor(u0))
+          const va = Math.max(0, Math.floor(v0))
+          const ub = Math.min(src.width, Math.max(ua + 1, Math.round(u0 + sx)))
+          const vb = Math.min(src.height, Math.max(va + 1, Math.round(v0 + sy)))
+          dst.data[o + c] = Math.round(box(ua, va, ub, vb, c))
+        } else {
+          const u = Math.min(src.width - 1, Math.max(0, u0 + sx / 2 - 0.5))
+          const v = Math.min(src.height - 1, Math.max(0, v0 + sy / 2 - 0.5))
+          const ua = Math.floor(u), va = Math.floor(v)
+          const ub = Math.min(src.width - 1, ua + 1), vb = Math.min(src.height - 1, va + 1)
+          const fu = u - ua, fv = v - va
+          const top = at(ua, va, c) * (1 - fu) + at(ub, va, c) * fu
+          const bottom = at(ua, vb, c) * (1 - fu) + at(ub, vb, c) * fu
+          dst.data[o + c] = Math.round(top * (1 - fv) + bottom * fv)
+        }
+      }
+      dst.data[o + 3] = 255
+    }
+  }
+}

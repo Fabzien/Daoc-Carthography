@@ -55,7 +55,8 @@ The following zones are currenctly available:
 * The Proving Grounds, The Lion's Den, The Hills of Claret, Killaloe, Thidranki, Braemar, Wilton, Molvik, Leirvik
 
 ### Capitals and dungeons
-* Camelot and Tir na Nóg are drawn on the Albion and Hibernia classic maps, with their NPCs; Jordheim has its own map
+* Camelot, Tir na Nóg and Jordheim are drawn on their realm's classic map in their current layout. Their NPCs are on
+  separate maps showing the cities' old layout, which is the one the DOL database uses.
 * 34 dungeon plans: realm dungeons, Darkness Falls, Passage of Conflict, Summoner's Hall and the Atlantis dungeons.
   Most show the DOL data; a few (Treibh Caillte, Tur Suil, Sobekite Eternal, and dungeons with almost no spawns in the
   database) are shown as plans only.
@@ -81,6 +82,9 @@ use `-- --release <n>` for a given release or `-- --data <dir>` for a local fold
 
 The Atlantis, housing, battleground, city and dungeon maps are built by `scripts/import-cartographe.ts` from the
 maps of DAoC Cartographe 2.52 (freeware by Tixu, 2006), downloaded from the Wayback Machine.
+
+Jordheim's drawing on the Midgard map comes from the zones library of
+[Camelot Insider](https://camelotinsider.github.io/zones_library.html) (`npm run import-city-drawings`).
 
 Stack: Vite, React 19, TypeScript, react-leaflet, Zustand.
 

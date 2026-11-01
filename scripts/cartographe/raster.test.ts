@@ -1,4 +1,4 @@
-import { blit, clearBackground, createRaster, extractTile, halve, readBmp8, type Raster } from './raster.ts'
+import { blit, clearBackground, createRaster, drawScaled, extractTile, halve, readBmp8, type Raster } from './raster.ts'
 
 // An uncompressed 8-bit BMP with the given palette (RGB) and rows of palette
 // indexes listed top to bottom, stored bottom-up like real files.
@@ -75,5 +75,27 @@ describe('blit / halve / extractTile', () => {
 
     expect(extractTile(canvas, 0, 0, 2)).toBeNull()
     expect(pixel(extractTile(canvas, 1, 0, 2)!, 0, 0)).toEqual([255, 255, 255, 255])
+  })
+})
+
+describe('drawScaled', () => {
+  const twoTone = () => {
+    const src = createRaster(2, 1)
+    src.data.set([0, 0, 0, 255, 200, 100, 50, 255])
+    return src
+  }
+
+  it('averages the covered source when shrinking', () => {
+    const dst = createRaster(1, 1)
+    drawScaled(dst, twoTone(), 0, 0, 1, 1)
+    expect(pixel(dst, 0, 0)).toEqual([100, 50, 25, 255])
+  })
+
+  it('fills the target rectangle when enlarging, clipped to the destination', () => {
+    const dst = createRaster(3, 2)
+    drawScaled(dst, twoTone(), 1, 0, 4, 2)
+    expect(pixel(dst, 0, 0)[3]).toBe(0)
+    expect(pixel(dst, 1, 0)).toEqual([0, 0, 0, 255])
+    expect(pixel(dst, 2, 1)[3]).toBe(255)
   })
 })

@@ -118,17 +118,15 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   const { dol } = region
   if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [], gameZones: [] }
   const id = dol.region
-  const embedded = region.embedded ?? []
-  // Calibration of a DOL region on this map: its own, or that of a region drawn in it.
-  const calibrationOf = (regionId: number): Calibration | undefined => (regionId === id ? dol : embedded.find((e) => e.region === regionId))
+  const cities = region.drawnCities ?? []
   const pos = (x: number, y: number) => toMap(dol, x, y)
   const regionNames = new Map(tables.regions.map((r) => [r.RegionID, r.Description]))
   const zoneOf = (regionId: number) => tables.zones.find((z) => z.RegionID === regionId)
 
   // Only zones drawn on the map's tiles; everything else is filtered by them,
   // which drops spawns in zones the map doesn't show. A floor plan covers part
-  // of its region's single zone: there, keep what falls on the plan. An
-  // embedded region is drawn in a square of its own.
+  // of its region's single zone: there, keep what falls on the plan. A drawn
+  // capital is a zone square of its own (its NPCs are on the city's own map).
   const zones: Zone[] = [
     ...tables.zones
       .filter((z) => z.RegionID === id && !region.plan && (!region.drawnZones || region.drawnZones.includes(z.Name)))
@@ -137,14 +135,13 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
         bounds: [pos(z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT), pos((z.OffsetX + z.Width) * ZONE_UNIT, (z.OffsetY + z.Height) * ZONE_UNIT)] as [LatLng, LatLng],
       }))
       .filter((z) => isOnMap(z.bounds[0]) && isOnMap(z.bounds[1])),
-    ...embedded.map((e) => ({ name: zoneOf(e.region)?.Name ?? regionNames.get(e.region) ?? `Region ${e.region}`, bounds: [...e.bounds] as [LatLng, LatLng] })),
+    ...cities.map((c) => ({ name: zoneOf(c.region)?.Name ?? regionNames.get(c.region) ?? `Region ${c.region}`, bounds: [...c.bounds] as [LatLng, LatLng] })),
   ]
   const inZone = region.plan ? isOnMap : (p: LatLng) => zones.some((z) => contains(z.bounds, p))
-  // Map position of a point of a DOL region, when that region is on this map.
+  // Map position of a point of this map's DOL region, when on a drawn zone.
   const place = (regionId: number, x: number, y: number): LatLng | null => {
-    const calibration = calibrationOf(regionId)
-    if (!calibration) return null
-    const p = toMap(calibration, x, y)
+    if (regionId !== id) return null
+    const p = pos(x, y)
     return inZone(p) ? p : null
   }
 
@@ -163,8 +160,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
       mobs.push([name, m.Level > 0 ? String(m.Level) : (template?.Level ?? '?'), p[0], p[1]])
     } else {
       npcs.push({ name, title: m.Guild ?? '', kind: kind ?? 'other', pos: p })
-      // Paths are in the map's own region coordinates.
-      if ((kind === 'stable' || kind === 'boat') && m.Region === id) masters.push({ x: m.X, y: m.Y, kind })
+      if (kind === 'stable' || kind === 'boat') masters.push({ x: m.X, y: m.Y, kind })
     }
   }
 
@@ -200,28 +196,22 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     ...tables.zones
       .filter((z) => z.RegionID === id)
       .map((z): GameZone => ({ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT] })),
-    // An embedded region's zone has its own coordinates, valid in its drawn square only.
-    ...embedded.flatMap((e): GameZone[] => {
-      const z = zoneOf(e.region)
+    // A drawn capital's zone has its own coordinates, valid in its square only.
+    ...cities.flatMap((c): GameZone[] => {
+      const z = zoneOf(c.region)
       if (!z) return []
-      return [{ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT], area: { bounds: [...e.bounds] as [LatLng, LatLng], scale: e.scale, offset: [...e.offset] as [number, number] } }]
+      return [{ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT], area: { bounds: [...c.bounds] as [LatLng, LatLng], scale: c.scale, offset: [...c.offset] as [number, number] } }]
     }),
   ]
 
   return { source, zones, mobs, npcs, routes, entrances, bindPoints, gameZones }
 }
 
-// The map showing a DOL region, and the calibration of that region on it: the
-// map's own region, or one embedded in it. Regions without a map of their own
-// can still share a name with one that has a map: the Atlantis dungeons exist
-// once per realm and only the Albion copies have maps.
+// The map showing a DOL region. Regions without a map of their own can still
+// share a name with one that has a map: the Atlantis dungeons exist once per
+// realm and only the Albion copies have maps.
 function mapForRegion(regionId: number, name: string, regionNames: Map<number, string>): { region: Region; calibration?: Calibration } | undefined {
   const idOf = (r: Region) => r.dol?.region ?? r.dolRegion
   const own = REGIONS.find((r) => idOf(r) === regionId) ?? REGIONS.find((r) => idOf(r) !== undefined && regionNames.get(idOf(r)!) === name)
-  if (own) return { region: own, calibration: own.dol }
-  for (const r of REGIONS) {
-    const e = r.embedded?.find((e) => e.region === regionId)
-    if (e) return { region: r, calibration: e }
-  }
-  return undefined
+  return own && { region: own, calibration: own.dol }
 }
