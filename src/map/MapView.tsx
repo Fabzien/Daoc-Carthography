@@ -107,9 +107,10 @@ export default function MapView() {
         <CursorLocation />
         {OVERLAYS.map(([key, Overlay]) => layers[key] && <Overlay key={key} />)}
       </Suspense>
-      {/* Own pane (and canvas) so highlights stay above every other layer. Its canvas
-          covers the whole map, so it must let mouse events through to the layers below. */}
-      <Pane name="selection" style={{ zIndex: 450, pointerEvents: 'none' }}>
+      {/* Own pane (and canvas) so highlights stay above every other layer, icon
+          markers included (marker pane: 600). Its canvas covers the whole map, so it
+          must let mouse events through to the layers below. */}
+      <Pane name="selection" style={{ zIndex: 620, pointerEvents: 'none' }}>
         <SelectionOverlay />
       </Pane>
       <SelectionController />

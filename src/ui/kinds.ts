@@ -10,8 +10,9 @@ export const NPC_KINDS: Record<NpcKind, { color: string; label: string }> = {
   teleporter: { color: '#ff5ecb', label: 'Teleporter' },
   guard: { color: '#e63946', label: 'Guard' },
   crafting: { color: '#ff8c42', label: 'Crafting' },
-  vault: { color: '#c0c0c0', label: 'Vault keeper' },
-  other: { color: '#ffffff', label: 'NPC' },
+  vault: { color: '#607d8b', label: 'Vault keeper' },
+  // Not white: icons draw a white pictogram on this color.
+  other: { color: '#8a8f94', label: 'NPC' },
 }
 
 // How many NPCs of each kind, in NPC_KINDS order, leaving out absent kinds.

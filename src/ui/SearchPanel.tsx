@@ -6,6 +6,7 @@ import { useEnter } from '../map/overlays/useEnter'
 import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
 import { describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS } from './kinds'
+import { npcBadgeHtml } from './npcIcons'
 
 const RESULT_LIMIT = 100
 
@@ -108,7 +109,8 @@ function NpcKindFilter() {
           const on = !hidden.includes(kind)
           return (
             <button key={kind} className={`chip chip-small${on ? '' : ' chip-off'}`} aria-pressed={on} onClick={() => toggleNpcKind(kind)}>
-              <span className="dot" style={{ background: NPC_KINDS[kind].color }} />
+              {/* Trusted markup built from constants, the same badge as on the map. */}
+              <span className="chip-badge" dangerouslySetInnerHTML={{ __html: npcBadgeHtml(kind) }} />
               {NPC_KINDS[kind].label} <small>{count}</small>
             </button>
           )
