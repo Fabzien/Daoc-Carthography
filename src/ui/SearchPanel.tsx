@@ -6,7 +6,7 @@ import { useEnter } from '../map/overlays/useEnter'
 import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
 import { describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS } from './kinds'
-import { npcBadgeHtml } from './npcIcons'
+import { npcBadgeHtml } from './badges'
 
 const RESULT_LIMIT = 100
 

@@ -25,7 +25,7 @@ export function npcKindCounts(npcs: Npc[]): [NpcKind, number][] {
 export const RESULT_KINDS: Record<ResultKind, { color: string; label: string }> = {
   mob: { color: '#e8710a', label: 'Mob' },
   npc: { color: '#1a73e8', label: 'NPC' },
-  entrance: { color: '#5f6368', label: 'Dungeon entrance' },
+  entrance: { color: '#263238', label: 'Dungeon entrance' },
   zone: { color: '#188038', label: 'Zone' },
   route: { color: '#a0522d', label: 'Route' },
   location: { color: '#d93025', label: 'Game location' },

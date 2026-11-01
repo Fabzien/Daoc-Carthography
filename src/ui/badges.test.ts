@@ -1,5 +1,5 @@
 import { NPC_KINDS } from './kinds'
-import { npcBadgeHtml } from './npcIcons'
+import { entranceBadgeHtml, npcBadgeHtml } from './badges'
 
 describe('npcBadgeHtml', () => {
   it('draws a Lucide pictogram on the kind color', () => {
@@ -10,5 +10,12 @@ describe('npcBadgeHtml', () => {
 
   it('uses the horse image for stable masters', () => {
     expect(npcBadgeHtml('stable')).toContain('<img src="/images/horse.png"')
+  })
+})
+
+describe('entranceBadgeHtml', () => {
+  it('fades entrances that lead to no map', () => {
+    expect(entranceBadgeHtml(true)).not.toContain('badge-faded')
+    expect(entranceBadgeHtml(false)).toContain('badge-faded')
   })
 })
