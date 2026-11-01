@@ -119,6 +119,8 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [], gameZones: [] }
   const id = dol.region
   const cities = region.drawnCities ?? []
+  // Calibration of a DOL region on this map: its own, or that of a capital drawn on it.
+  const calibrationOf = (regionId: number): Calibration | undefined => (regionId === id ? dol : cities.find((c) => c.region === regionId))
   const pos = (x: number, y: number) => toMap(dol, x, y)
   const regionNames = new Map(tables.regions.map((r) => [r.RegionID, r.Description]))
   const zoneOf = (regionId: number) => tables.zones.find((z) => z.RegionID === regionId)
@@ -126,7 +128,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   // Only zones drawn on the map's tiles; everything else is filtered by them,
   // which drops spawns in zones the map doesn't show. A floor plan covers part
   // of its region's single zone: there, keep what falls on the plan. A drawn
-  // capital is a zone square of its own (its NPCs are on the city's own map).
+  // capital is a zone square of its own.
   const zones: Zone[] = [
     ...tables.zones
       .filter((z) => z.RegionID === id && !region.plan && (!region.drawnZones || region.drawnZones.includes(z.Name)))
@@ -138,10 +140,11 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     ...cities.map((c) => ({ name: zoneOf(c.region)?.Name ?? regionNames.get(c.region) ?? `Region ${c.region}`, bounds: [...c.bounds] as [LatLng, LatLng] })),
   ]
   const inZone = region.plan ? isOnMap : (p: LatLng) => zones.some((z) => contains(z.bounds, p))
-  // Map position of a point of this map's DOL region, when on a drawn zone.
+  // Map position of a point of a DOL region shown on this map, when on a drawn zone.
   const place = (regionId: number, x: number, y: number): LatLng | null => {
-    if (regionId !== id) return null
-    const p = pos(x, y)
+    const calibration = calibrationOf(regionId)
+    if (!calibration) return null
+    const p = toMap(calibration, x, y)
     return inZone(p) ? p : null
   }
 
@@ -160,7 +163,8 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
       mobs.push([name, m.Level > 0 ? String(m.Level) : (template?.Level ?? '?'), p[0], p[1]])
     } else {
       npcs.push({ name, title: m.Guild ?? '', kind: kind ?? 'other', pos: p })
-      if (kind === 'stable' || kind === 'boat') masters.push({ x: m.X, y: m.Y, kind })
+      // Paths are in the map's own region coordinates.
+      if ((kind === 'stable' || kind === 'boat') && m.Region === id) masters.push({ x: m.X, y: m.Y, kind })
     }
   }
 
@@ -207,11 +211,17 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   return { source, zones, mobs, npcs, routes, entrances, bindPoints, gameZones }
 }
 
-// The map showing a DOL region. Regions without a map of their own can still
-// share a name with one that has a map: the Atlantis dungeons exist once per
-// realm and only the Albion copies have maps.
+// The map showing a DOL region, and the calibration of that region on it: the
+// map's own region, or a capital drawn on it. Regions without a map of their
+// own can still share a name with one that has a map: the Atlantis dungeons
+// exist once per realm and only the Albion copies have maps.
 function mapForRegion(regionId: number, name: string, regionNames: Map<number, string>): { region: Region; calibration?: Calibration } | undefined {
   const idOf = (r: Region) => r.dol?.region ?? r.dolRegion
   const own = REGIONS.find((r) => idOf(r) === regionId) ?? REGIONS.find((r) => idOf(r) !== undefined && regionNames.get(idOf(r)!) === name)
-  return own && { region: own, calibration: own.dol }
+  if (own) return { region: own, calibration: own.dol }
+  for (const r of REGIONS) {
+    const city = r.drawnCities?.find((c) => c.region === regionId)
+    if (city) return { region: r, calibration: city }
+  }
+  return undefined
 }

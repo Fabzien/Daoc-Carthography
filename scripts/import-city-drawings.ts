@@ -70,7 +70,7 @@ async function main() {
           }
         }
       }
-      console.log(`${region.name}: drew ${city.map} (${count} tiles)`)
+      console.log(`${region.name}: drew region ${city.region} (${count} tiles)`)
     }
   }
 }

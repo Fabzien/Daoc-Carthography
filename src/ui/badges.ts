@@ -1,4 +1,4 @@
-import { Anvil, Castle, createElement, DoorOpen, GraduationCap, HandCoins, HeartPulse, Shield, Ship, Sparkles, User, Vault, type IconNode } from 'lucide'
+import { Anvil, createElement, DoorOpen, GraduationCap, HandCoins, HeartPulse, Shield, Ship, Sparkles, User, Vault, type IconNode } from 'lucide'
 import type { NpcKind } from '../data/types'
 import { NPC_KINDS, RESULT_KINDS } from './kinds'
 
@@ -43,11 +43,6 @@ function badgeHtml(color: string, pictogram: Pictogram, className = ''): string 
 
 export function npcBadgeHtml(kind: NpcKind): string {
   return badgeHtml(NPC_KINDS[kind].color, NPC_PICTOGRAMS[kind])
-}
-
-// A drawn capital, linking to the city's own map.
-export function cityBadgeHtml(): string {
-  return badgeHtml(RESULT_KINDS.entrance.color, Castle, 'badge-entrance')
 }
 
 // Entrances to places without a map can't be entered: their badge is faded.

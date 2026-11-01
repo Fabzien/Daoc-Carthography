@@ -151,8 +151,11 @@ describe('buildRegionData', () => {
     expect(data.mobs).toHaveLength(1)
   })
 
-  it('draws a capital as a zone with exact /loc, its NPCs being on its own map', () => {
+  it('places a capital drawn on the map with its own calibration', () => {
     const camelot = albion.drawnCities![0]
+    const [[top, left], [bottom, right]] = camelot.bounds
+    // A point of region 10 at the middle of its drawn square.
+    const middle = { X: ((left + right) / 2 - camelot.offset[0]) * camelot.scale, Y: (-(top + bottom) / 2 - camelot.offset[1]) * camelot.scale }
     const data = buildRegionData(
       albion,
       tables({
@@ -161,17 +164,15 @@ describe('buildRegionData', () => {
           { ZoneID: 26, Name: 'City of Camelot', RegionID: 10, OffsetX: 1, OffsetY: 1, Width: 8, Height: 8 },
         ],
         regions: [{ RegionID: 10, Description: 'Camelot City' }],
-        mobs: [mob({ Name: 'Guard', Realm: 1, Region: 10, X: 30000, Y: 30000 })],
-        zonePoints: [{ SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 10, TargetX: 30000, TargetY: 30000 }],
+        mobs: [mob({ Name: 'Guard', Realm: 1, Region: 10, ...middle })],
+        zonePoints: [{ SourceRegion: 1, SourceX: inZone.X, SourceY: inZone.Y, TargetRegion: 10, TargetX: middle.X, TargetY: middle.Y }],
       }),
       'test',
     )
-    expect(data.npcs).toEqual([])
+    expect(data.npcs.map((n) => n.name)).toEqual(['Guard'])
     expect(data.zones.find((z) => z.name === 'City of Camelot')?.bounds).toEqual(camelot.bounds)
-    // The city zone's corner (8192, 8192) is the drawn square's corner: same scale as the overland.
-    const area = data.gameZones.find((z) => z.name === 'City of Camelot')!.area!
-    expect(area.scale).toBe(2048)
-    expect(toMap(area, 8192, 8192)).toEqual(camelot.bounds[0])
-    expect(data.entrances[0].target?.map).toBe('Camelot')
+    // The entrance to the city stays on this map, arriving in the city.
+    expect(data.entrances[0].target).toEqual({ map: 'Albion-Classic', pos: toMap(camelot, middle.X, middle.Y) })
+    expect(data.gameZones.find((z) => z.name === 'City of Camelot')?.area?.scale).toBe(camelot.scale)
   })
 })

@@ -55,8 +55,7 @@ The following zones are currenctly available:
 * The Proving Grounds, The Lion's Den, The Hills of Claret, Killaloe, Thidranki, Braemar, Wilton, Molvik, Leirvik
 
 ### Capitals and dungeons
-* Camelot, Tir na Nóg and Jordheim are drawn on their realm's classic map in their current layout. Their NPCs are on
-  separate maps showing the cities' old layout, which is the one the DOL database uses.
+* Camelot, Tir na Nóg and Jordheim are drawn on their realm's classic map, with their NPCs
 * 34 dungeon plans: realm dungeons, Darkness Falls, Passage of Conflict, Summoner's Hall and the Atlantis dungeons.
   Most show the DOL data; a few (Treibh Caillte, Tur Suil, Sobekite Eternal, and dungeons with almost no spawns in the
   database) are shown as plans only.
