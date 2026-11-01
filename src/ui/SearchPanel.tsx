@@ -16,7 +16,6 @@ const LAYER_CHIPS: { key: LayerKey; label: string; color: string }[] = [
   { key: 'npcs', label: 'NPCs', color: RESULT_KINDS.npc.color },
   { key: 'entrances', label: 'Dungeons', color: RESULT_KINDS.entrance.color },
   { key: 'routes', label: 'Routes', color: ROUTE_COLORS.horse },
-  { key: 'zones', label: 'Zones', color: RESULT_KINDS.zone.color },
   { key: 'bindPoints', label: 'Bind points', color: '#00acc1' },
 ]
 

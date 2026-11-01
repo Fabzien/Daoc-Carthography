@@ -20,7 +20,6 @@ The in-game position under the cursor is shown as zone + `/loc`, and the search 
 coordinates (`27323, 8475`, `Camelot Hills 27323 8475`, or a pasted `/loc` line).
 
 Toggleable layers, generated from the [Dawn of Light](https://github.com/Dawn-of-Light/DOLSharp) server emulator's database:
-* Zones
 * Dungeon entrances
 * Horse and boat routes
 * NPCs (merchants, trainers, healers, stable masters, guards...)

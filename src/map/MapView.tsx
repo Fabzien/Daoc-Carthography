@@ -12,11 +12,9 @@ import MobsOverlay from './overlays/MobsOverlay'
 import NpcsOverlay from './overlays/NpcsOverlay'
 import RoutesOverlay from './overlays/RoutesOverlay'
 import SelectionOverlay from './overlays/SelectionOverlay'
-import ZonesOverlay from './overlays/ZonesOverlay'
 
 // Drawing order: later layers are on top.
 const OVERLAYS: [LayerKey, ComponentType][] = [
-  ['zones', ZonesOverlay],
   ['routes', RoutesOverlay],
   ['mobs', MobsOverlay],
   ['bosses', BossesOverlay],

@@ -3,7 +3,7 @@ import { DEFAULT_REGION, type RegionName } from './data/regions'
 import type { LatLng, NpcKind } from './data/types'
 import { ANY_LEVEL, isAnyLevel, type LevelFilter, type SearchResult } from './search'
 
-export type LayerKey = 'zones' | 'entrances' | 'routes' | 'npcs' | 'mobs' | 'bosses' | 'bindPoints'
+export type LayerKey = 'entrances' | 'routes' | 'npcs' | 'mobs' | 'bosses' | 'bindPoints'
 
 interface MapState {
   region: RegionName
@@ -30,7 +30,7 @@ interface MapState {
 
 export const useMapStore = create<MapState>()((set) => ({
   region: DEFAULT_REGION,
-  layers: { zones: true, entrances: true, routes: true, npcs: false, mobs: false, bosses: true, bindPoints: false },
+  layers: { entrances: true, routes: true, npcs: false, mobs: false, bosses: true, bindPoints: false },
   query: '',
   levels: ANY_LEVEL,
   selected: null,
