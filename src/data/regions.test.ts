@@ -24,16 +24,23 @@ describe('toMap', () => {
   })
 })
 
-describe('floor plans', () => {
-  it('spreads the fitted plan over the 256-unit map', () => {
-    // Catacombs: 16.547 game units per pixel of a 1024 px plan, top-left at (25685, 28828).
-    const dol = region('Catacombs-of-Cardova').dol!
-    expect(toMap(dol, 25685, 28828)).toEqual([-0, 0])
-    expect(toMap(dol, 25685 + 1024 * 16.547, 28828 + 1024 * 16.547)).toEqual([-256, 256])
+describe('dungeon maps', () => {
+  it('spreads a fitted zone map over the 256-unit map', () => {
+    // Darkness Falls: 85.447 game units per pixel of the zone map resized to 512 px, top-left at (8084, 8814).
+    const dol = region('Darkness-Falls').dol!
+    expect(toMap(dol, 8084, 8814)).toEqual([-0, 0])
+    expect(toMap(dol, 8084 + 512 * 85.447, 8814 + 512 * 85.447)).toEqual([-256, 256])
   })
 
-  it('leaves plans without a reliable fit without DOL calibration', () => {
-    expect(region('Treibh-Caillte').dol).toBeUndefined()
-    expect(region('Treibh-Caillte').plan).toBe('D_Hib_07')
+  it('spreads a fitted floor plan over the 256-unit map', () => {
+    // Muire Tomb: 13.899 game units per pixel of a 1024 px plan, top-left at (26562, 26744).
+    const dol = region('Muire-Tomb').dol!
+    expect(toMap(dol, 26562 + 1024 * 13.899, 26744 + 1024 * 13.899)).toEqual([-256, 256])
+  })
+
+  it('keeps maps without a reliable fit reachable but without DOL calibration', () => {
+    expect(region('Tur-Suil').dol).toBeUndefined()
+    expect(region('Tur-Suil').dolRegion).toBe(190)
+    expect(region('Tur-Suil').zoneMap).toBe('zone190')
   })
 })

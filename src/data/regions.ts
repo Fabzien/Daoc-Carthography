@@ -35,10 +35,26 @@ export interface RegionDefinition {
   drawnZones?: readonly string[]
   // DAoC Cartographe floor plan (file name without extension) the tiles are built from.
   plan?: string
+  // Camelot Insider zone map (e.g. 'zone249') the tiles are built from.
+  zoneMap?: string
   // DOL RegionID of a map without calibration, so entrances can still lead to it.
   dolRegion?: number
   // Capitals drawn on this map, each in a zone square of its own.
   drawnCities?: readonly DrawnCity[]
+}
+
+// A dungeon shown whole as a 256-unit map from the game's zone map published
+// by Camelot Insider (https://camelotinsider.github.io, zones library). The
+// image is resampled to 1024 px (native zoom 2). `fit` is its calibration,
+// found like plan()'s and checked by overlaying mobs and exits, in pixels of
+// the image resized to 512 px: game units per pixel, then the game X and Y of
+// the top-left pixel.
+function zoneMap<const N extends string>(name: N, label: string, group: RegionGroup, zone: string, dolRegion: number, fit?: readonly [number, number, number]) {
+  const tiles = `/maps/zones/${zone}/tiles/{z}/{x}/{y}.png`
+  if (!fit) return { name, label, group, tiles, maxNativeZoom: 2, zoneMap: zone, dolRegion }
+  // 512 px are 256 map units: 2 px per map unit.
+  const scale = fit[0] * 2
+  return { name, label, group, tiles, maxNativeZoom: 2, zoneMap: zone, dol: { region: dolRegion, scale, offset: [-fit[1] / scale, -fit[2] / scale] as const } }
 }
 
 // A capital is a DOL region of its own, drawn on its realm's classic map as
@@ -71,7 +87,7 @@ const ALBION_CLASSIC = { region: 1, scale: 2048, offset: [-140.4, -180.2] } as c
 const HIBERNIA_CLASSIC = { region: 200, scale: 2048, offset: [-108.0, -204.0] } as const
 const MIDGARD_CLASSIC = { region: 100, scale: 2048, offset: [-282.0, -311.6] } as const
 
-// A DAoC Cartographe floor plan (dungeon or capital city), shown whole as a
+// A DAoC Cartographe floor plan of a dungeon, shown whole as a
 // 256-unit map. `fit` is its calibration, found by matching DOL mob positions
 // to the plan's floors: game units per plan pixel, then the game X and Y of
 // the top-left pixel. Plans without a reliable fit are shown without DOL data.
@@ -134,42 +150,56 @@ const DEFINITIONS = [
   { name: 'Wilton', label: 'Wilton (30–34)', group: 'Battlegrounds', tiles: '/maps/battlegrounds/wilton/tiles/{z}/{x}/{y}.png', maxNativeZoom: 4, dol: { region: 240, scale: 2048, offset: [-256, -256] }, extent: 32, drawnZones: ['Wilton'] },
   { name: 'Molvik', label: 'Molvik (35–39)', group: 'Battlegrounds', tiles: '/maps/battlegrounds/molvik/tiles/{z}/{x}/{y}.png', maxNativeZoom: 4, dol: { region: 241, scale: 2048, offset: [-256, -256] }, extent: 32, drawnZones: ['Molvik'] },
   { name: 'Leirvik', label: 'Leirvik (40–44)', group: 'Battlegrounds', tiles: '/maps/battlegrounds/leirvik/tiles/{z}/{x}/{y}.png', maxNativeZoom: 4, dol: { region: 242, scale: 2048, offset: [-128, -128] }, extent: 32, drawnZones: ['Leirvik'] },
-  // Dungeons and capitals: DAoC Cartographe floor plans. See plan() for `fit`.
-  plan('Catacombs-of-Cardova', 'Catacombs of Cardova', 'Albion dungeons', 'D_Alb_01', 23, [16.547, 25685, 28828]),
-  plan('Tepoks-Mine', "Tepok's Mine", 'Albion dungeons', 'D_Alb_02', 24, [12.318, 25537, 23706]),
-  plan('Tomb-of-Mithra', 'Tomb of Mithra', 'Albion dungeons', 'D_Alb_03', 21, [13.65, 19884, 26984]),
-  plan('Keltoi-Fogou', 'Keltoi Fogou', 'Albion dungeons', 'D_Alb_04', 22, [9.66, 29162, 26854]),
-  plan('Stonehenge-Barrows', 'Stonehenge Barrows', 'Albion dungeons', 'D_Alb_05', 20, [13.217, 24716, 21326]),
-  plan('Caer-Sidi', 'Caer Sidi', 'Albion dungeons', 'D_Alb_06', 60, [25.535, 22665, 20556]),
-  plan('Krondon', 'Krondon', 'Albion dungeons', 'D_Alb_07', 61, [55.444, 12918, 16944]),
-  plan('Avalon-City', 'Avalon City', 'Albion dungeons', 'D_Alb_08', 50, [36.155, 17614, 14796]),
-  plan('Crystal-Cave', 'Crystal Cave', 'Albion dungeons', 'D_Alb_09', 62, undefined, 512),
-  plan('Glimmer-Mines', 'Glimmer Mines', 'Hibernia dungeons', 'D_hib_01'),
-  plan('Fomor', 'Fomor', 'Hibernia dungeons', 'D_Hib_02', 180, [21.321, 24458, 18741]),
-  plan('Galladoria', 'Galladoria', 'Hibernia dungeons', 'D_Hib_03', 191, [43.878, 14655, 22678]),
+  // Dungeons: the game's zone maps from Camelot Insider where they could be
+  // calibrated or have no better source, DAoC Cartographe plans otherwise.
+  // See zoneMap() and plan() for `fit`.
+  zoneMap('Catacombs-of-Cardova', 'Catacombs of Cardova', 'Albion dungeons', 'zone023', 23, [33.842, 23147, 28206]),
+  zoneMap('Tepoks-Mine', "Tepok's Mine", 'Albion dungeons', 'zone024', 24, [21.188, 28617, 24529]),
+  zoneMap('Tomb-of-Mithra', 'Tomb of Mithra', 'Albion dungeons', 'zone021', 21, [26.567, 20687, 25969]),
+  zoneMap('Keltoi-Fogou', 'Keltoi Fogou', 'Albion dungeons', 'zone022', 22, [15.192, 29928, 27959]),
+  zoneMap('Stonehenge-Barrows', 'Stonehenge Barrows', 'Albion dungeons', 'zone019', 20, [24.882, 24783, 21768]),
+  zoneMap('Caer-Sidi', 'Caer Sidi', 'Albion dungeons', 'zone060', 60, [39.82, 21314, 23866]),
+  zoneMap('Krondon', 'Krondon', 'Albion dungeons', 'zone061', 61, [104.053, 10185, 17810]),
+  zoneMap('Avalon-City', 'Avalon City', 'Albion dungeons', 'zone050', 50, [67.436, 14554, 17810]),
+  zoneMap('Brimstone-Caverns', 'Brimstone Caverns', 'Albion dungeons', 'zone339', 339, [87.568, 10279, 9315]),
+  zoneMap('Roman-Aqueducts', 'Roman Aqueducts', 'Albion dungeons', 'zone063', 63, [61.976, 13371, 15504]),
+  // The three Abandoned Mines share one map; DOL's Albion and Midgard copies don't fit it.
+  zoneMap('Abandoned-Mines-Albion', "Albion's Abandoned Mines", 'Albion dungeons', 'zone227', 227),
+  zoneMap('Crystal-Cave', 'Crystal Cave', 'Albion dungeons', 'zone062', 62),
+  zoneMap('Coruscating-Mine', 'Coruscating Mine', 'Hibernia dungeons', 'zone220', 220, [26.319, 26082, 21818]),
+  zoneMap('Fomor', 'Fomor', 'Hibernia dungeons', 'zone180', 180, [32.796, 24717, 21873]),
+  zoneMap('Galladoria', 'Galladoria', 'Hibernia dungeons', 'zone191', 191, [80.228, 17748, 26125]),
+  // Camelot Insider's Muire Tomb is an annotated community map that can't be calibrated.
   plan('Muire-Tomb', 'Muire Tomb', 'Hibernia dungeons', 'D_Hib_04', 221, [13.899, 26562, 26744]),
-  plan('Koalinth-Caverns', 'Koalinth Caverns', 'Hibernia dungeons', 'D_Hib_05', 223, [13.967, 24388, 24368]),
-  plan('Spraggon-Den', 'Spraggon Den', 'Hibernia dungeons', 'D_Hib_06', 222, [12.948, 25362, 25386]),
-  plan('Treibh-Caillte', 'Treibh Caillte', 'Hibernia dungeons', 'D_Hib_07', 224),
-  plan('Tur-Suil', 'Tur Suil', 'Hibernia dungeons', 'D_Hib_08', 190),
-  plan('Nisses-Lair', "Nisse's Lair", 'Midgard dungeons', 'D_Mid_01', 129, [15.142, 22637, 26033]),
-  plan('Vendo-Caverns', 'Vendo Caverns', 'Midgard dungeons', 'D_Mid_02', 126, [10.228, 23757, 27906]),
-  plan('Spindelhalla', 'Spindelhalla', 'Midgard dungeons', 'D_Mid_03', 125, [16.134, 26728, 27566]),
-  plan('Varulvhamn', 'Varulvhamn', 'Midgard dungeons', 'D_Mid_04', 127, [20.407, 15401, 20749]),
-  plan('Tuscaran-Glacier', 'Tuscaran Glacier', 'Midgard dungeons', 'D_Mid_05', 160, [57.372, 9, 8277]),
-  plan('Trollheim', 'Trollheim', 'Midgard dungeons', 'D_Mid_06', 150, [47.873, 416, 5799]),
-  plan('Iarnvidiurs-Lair', "Iarnvidiur's Lair", 'Midgard dungeons', 'D_Mid_07', 161, [16.909, 483704, 27508]),
-  plan('Darkness-Falls-1', 'Darkness Falls · plan 1', 'Frontiers', 'Darkness_Falls1', 249, [44.116, 8911, 8383]),
-  plan('Darkness-Falls-2', 'Darkness Falls · plan 2', 'Frontiers', 'Darkness_Falls2', 249, [44.116, 8822, 8427]),
+  zoneMap('Koalinth-Caverns', 'Koalinth Caverns', 'Hibernia dungeons', 'zone223', 223, [29.475, 24822, 24534]),
+  zoneMap('Spraggon-Den', 'Spraggon Den', 'Hibernia dungeons', 'zone222', 222, [23.725, 26101, 25518]),
+  zoneMap('Treibh-Caillte', 'Treibh Caillte', 'Hibernia dungeons', 'zone224', 224, [22.671, 25676, 24352]),
+  zoneMap('Tur-Suil', 'Tur Suil', 'Hibernia dungeons', 'zone190', 190),
+  zoneMap('Abandoned-Mines-Hibernia', "Hibernia's Abandoned Mines", 'Hibernia dungeons', 'zone228', 228, [83.381, 10072, 9659]),
+  zoneMap('Veil-Rift', 'Veil Rift', 'Hibernia dungeons', 'zone092', 92),
+  zoneMap('Nisses-Lair', "Nisse's Lair", 'Midgard dungeons', 'zone129', 129, [27.826, 25455, 27698]),
+  zoneMap('Vendo-Caverns', 'Vendo Caverns', 'Midgard dungeons', 'zone126', 126, [15.851, 25471, 28193]),
+  zoneMap('Spindelhalla', 'Spindelhalla', 'Midgard dungeons', 'zone125', 125, [20.863, 26808, 26259]),
+  zoneMap('Varulvhamn', 'Varulvhamn', 'Midgard dungeons', 'zone127', 127, [38.842, 15854, 19350]),
+  zoneMap('Tuscaran-Glacier', 'Tuscaran Glacier', 'Midgard dungeons', 'zone160', 160, [104.494, 9411, 12283]),
+  zoneMap('Trollheim', 'Trollheim', 'Midgard dungeons', 'zone150', 150, [89.907, 11417, 8126]),
+  zoneMap('Iarnvidiurs-Lair', "Iarnvidiur's Lair", 'Midgard dungeons', 'zone161', 161, [29.118, 483512, 28009]),
+  zoneMap('Cursed-Tomb', 'Cursed Tomb', 'Midgard dungeons', 'zone128', 128, [15.313, 29889, 27919]),
+  zoneMap('Burial-Grounds', 'Burial Grounds', 'Midgard dungeons', 'zone229', 229, [70.05, 19930, 10529]),
+  zoneMap('Abandoned-Mines-Midgard', "Midgard's Abandoned Mines", 'Midgard dungeons', 'zone226', 226),
+  zoneMap('Darkness-Falls', 'Darkness Falls', 'Frontiers', 'zone249', 249, [85.447, 8084, 8814]),
+  zoneMap('Demons-Breach', "Demon's Breach", 'Frontiers', 'zone489', 489, [53.858, 13722, 30668]),
+  // Camelot Insider's Passage of Conflict is annotated, and it has no Summoner's Hall.
   plan('Passage-of-Conflict', 'Passage of Conflict', 'Frontiers', '244', 244, [44.11, 11649, 11815]),
   plan('Summoners-Hall', "Summoner's Hall", 'Frontiers', '233', 233, [58.461, 15785, 21982], 512),
-  // Atlantis dungeons exist once per realm; these use the Albion copies.
-  plan('Halls-of-Maati', "Halls of Ma'ati", 'Atlantis dungeons', 'DMaati', 40, [42.397, 10136, 18132]),
+  // Atlantis dungeons exist once per realm. Camelot Insider only has the
+  // Midgard copies; City of Aerus's sky background defeats calibration there.
+  zoneMap('Halls-of-Maati', "Halls of Ma'ati", 'Atlantis dungeons', 'zone083', 83, [78.335, 12043, 20445]),
   plan('City-of-Aerus', 'City of Aerus', 'Atlantis dungeons', 'Daerus', 47, [44.862, 2109, 10131]),
-  plan('Temple-of-Twilight', 'Temple of Twilight', 'Atlantis dungeons', 'Dtemple', 37, [44.161, 25622, 9340]),
-  plan('Sobekite-Eternal', 'Sobekite Eternal', 'Atlantis dungeons', 'Dsobekite', 36),
+  zoneMap('Temple-of-Twilight', 'Temple of Twilight', 'Atlantis dungeons', 'zone080', 80, [85.891, 26132, 8742]),
+  zoneMap('Sobekite-Eternal', 'Sobekite Eternal', 'Atlantis dungeons', 'zone079', 79, [72.313, 16272, 9738]),
+  zoneMap('Deep-Volcanus', 'Deep Volcanus', 'Atlantis dungeons', 'zone089', 89),
   plan('Celestius', 'Celestius', 'Atlantis dungeons', 'Dcelestius', 91, undefined, 512),
-  plan('Deep-Volcanus', 'Deep Volcanus', 'Atlantis dungeons', 'Dvolcanus', 46),
   plan('Great-Pyramid', 'Great Pyramid of Stygia', 'Atlantis dungeons', 'Dpyramid', 45, undefined, 512),
   plan('Cetus-Pit', "Cetus' Pit", 'Atlantis dungeons', 'Dcitus_pit', 35, undefined, 512),
 ] as const satisfies readonly RegionDefinition[]

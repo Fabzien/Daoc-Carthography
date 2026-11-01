@@ -12,7 +12,7 @@
     "test": "vitest",
     "import-dol": "node scripts/import-dol.ts",
     "import-cartographe": "node scripts/import-cartographe.ts",
-    "import-city-drawings": "node scripts/import-city-drawings.ts"
+    "import-camelotinsider": "node scripts/import-camelotinsider.ts"
   },
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",

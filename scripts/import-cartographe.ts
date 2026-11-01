@@ -10,13 +10,13 @@
 // floor plans are used whole (their calibration is in regions.ts).
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { unzipSync } from 'fflate'
-import { PNG } from 'pngjs'
 import { REGIONS, type Region } from '../src/data/regions.ts'
-import { blit, clearBackground, createRaster, extractTile, halve, readBmp8, type Raster } from './cartographe/raster.ts'
+import { blit, clearBackground, createRaster, readBmp8, type Raster } from './cartographe/raster.ts'
+import { writeTiles } from './cartographe/tiles.ts'
 import { downloadTables, latestRelease, ROOT } from './dol/dbPublic.ts'
 import type { DolZone } from './dol/transform.ts'
 
@@ -85,26 +85,6 @@ function readPlan(region: Region, maps: Map<string, Uint8Array>): Raster {
   return image
 }
 
-async function writeTiles(region: Region, canvas: Raster): Promise<number> {
-  const dir = path.join(ROOT, 'public', region.tiles.replace('/{z}/{x}/{y}.png', ''))
-  await rm(dir, { recursive: true, force: true })
-  let count = 0
-  for (let zoom = region.maxNativeZoom; zoom >= 0; zoom--) {
-    for (let tx = 0; tx * TILE < canvas.width; tx++) {
-      for (let ty = 0; ty * TILE < canvas.height; ty++) {
-        const tile = extractTile(canvas, tx, ty, TILE)
-        if (!tile) continue
-        await mkdir(path.join(dir, String(zoom), String(tx)), { recursive: true })
-        const png = new PNG({ width: tile.width, height: tile.height })
-        png.data = Buffer.from(tile.data)
-        await writeFile(path.join(dir, String(zoom), String(tx), `${ty}.png`), PNG.sync.write(png))
-        count++
-      }
-    }
-    canvas = halve(canvas)
-  }
-  return count
-}
 
 async function main() {
   const { values } = parseArgs({ options: { release: { type: 'string' } } })

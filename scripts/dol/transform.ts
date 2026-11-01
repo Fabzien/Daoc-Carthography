@@ -119,6 +119,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [], gameZones: [] }
   const id = dol.region
   const cities = region.drawnCities ?? []
+  const wholeMap = Boolean(region.plan || region.zoneMap)
   // Calibration of a DOL region on this map: its own, or that of a capital drawn on it.
   const calibrationOf = (regionId: number): Calibration | undefined => (regionId === id ? dol : cities.find((c) => c.region === regionId))
   const pos = (x: number, y: number) => toMap(dol, x, y)
@@ -126,12 +127,14 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   const zoneOf = (regionId: number) => tables.zones.find((z) => z.RegionID === regionId)
 
   // Only zones drawn on the map's tiles; everything else is filtered by them,
-  // which drops spawns in zones the map doesn't show. A floor plan covers part
+  // which drops spawns in zones the map doesn't show. A dungeon map (a floor
+  // plan or a zone map) shows its region whole, with no zones: there, keep what
+  // falls on the map. A floor plan covers part
   // of its region's single zone: there, keep what falls on the plan. A drawn
   // capital is a zone square of its own.
   const zones: Zone[] = [
     ...tables.zones
-      .filter((z) => z.RegionID === id && !region.plan && (!region.drawnZones || region.drawnZones.includes(z.Name)))
+      .filter((z) => z.RegionID === id && !wholeMap && (!region.drawnZones || region.drawnZones.includes(z.Name)))
       .map((z) => ({
         name: z.Name,
         bounds: [pos(z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT), pos((z.OffsetX + z.Width) * ZONE_UNIT, (z.OffsetY + z.Height) * ZONE_UNIT)] as [LatLng, LatLng],
@@ -139,7 +142,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
       .filter((z) => isOnMap(z.bounds[0]) && isOnMap(z.bounds[1])),
     ...cities.map((c) => ({ name: zoneOf(c.region)?.Name ?? regionNames.get(c.region) ?? `Region ${c.region}`, bounds: [...c.bounds] as [LatLng, LatLng] })),
   ]
-  const inZone = region.plan ? isOnMap : (p: LatLng) => zones.some((z) => contains(z.bounds, p))
+  const inZone = wholeMap ? isOnMap : (p: LatLng) => zones.some((z) => contains(z.bounds, p))
   // Map position of a point of a DOL region shown on this map, when on a drawn zone.
   const place = (regionId: number, x: number, y: number): LatLng | null => {
     const calibration = calibrationOf(regionId)
