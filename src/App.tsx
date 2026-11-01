@@ -1,4 +1,5 @@
 import MapView from './map/MapView'
+import AppFooter from './ui/AppFooter'
 import RegionSwitcher from './ui/RegionSwitcher'
 import SearchPanel from './ui/SearchPanel'
 
@@ -8,11 +9,7 @@ export default function App() {
       <MapView />
       <SearchPanel />
       <RegionSwitcher />
-      <footer className="footer">
-        <a href="https://github.com/Fabzien/Daoc-Carthography" target="_blank" rel="noreferrer">
-          <img src="/assets/GitHub-Mark-Light-32px.png" alt="GitHub repository" />
-        </a>
-      </footer>
+      <AppFooter />
     </>
   )
 }

@@ -459,4 +459,27 @@ input {
   left: 50%;
   bottom: 8px;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 4px;
+  background: rgba(32, 33, 36, 0.75);
+  border-radius: 18px;
+  color: #e8eaed;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.footer a {
+  display: flex;
+}
+
+.footer img {
+  width: 24px;
+  height: 24px;
+}
+
+.footer .disclaimer {
+  color: #fdd663;
+  cursor: help;
 }
