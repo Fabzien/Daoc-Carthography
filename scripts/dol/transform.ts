@@ -1,5 +1,5 @@
 // Pure transformations from DOL database tables to the map's RegionData.
-import { REGIONS, toMap, type Region } from '../../src/data/regions.ts'
+import { REGIONS, toMap, type Calibration, type Region } from '../../src/data/regions.ts'
 import type { Entrance, GameZone, LatLng, Npc, NpcKind, RegionData, Route, Zone } from '../../src/data/types.ts'
 
 // Subsets of the DOL tables (see DOLDatabase/Tables in DOLSharp) used here.
@@ -118,28 +118,44 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   const { dol } = region
   if (!dol) return { source, zones: [], mobs: [], npcs: [], routes: [], entrances: [], bindPoints: [], gameZones: [] }
   const id = dol.region
+  const embedded = region.embedded ?? []
+  // Calibration of a DOL region on this map: its own, or that of a region drawn in it.
+  const calibrationOf = (regionId: number): Calibration | undefined => (regionId === id ? dol : embedded.find((e) => e.region === regionId))
   const pos = (x: number, y: number) => toMap(dol, x, y)
+  const regionNames = new Map(tables.regions.map((r) => [r.RegionID, r.Description]))
+  const zoneOf = (regionId: number) => tables.zones.find((z) => z.RegionID === regionId)
 
   // Only zones drawn on the map's tiles; everything else is filtered by them,
   // which drops spawns in zones the map doesn't show. A floor plan covers part
-  // of its region's single zone: there, keep what falls on the plan.
-  const zones: Zone[] = tables.zones
-    .filter((z) => z.RegionID === id && !region.plan && (!region.drawnZones || region.drawnZones.includes(z.Name)))
-    .map((z) => ({
-      name: z.Name,
-      bounds: [pos(z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT), pos((z.OffsetX + z.Width) * ZONE_UNIT, (z.OffsetY + z.Height) * ZONE_UNIT)] as [LatLng, LatLng],
-    }))
-    .filter((z) => isOnMap(z.bounds[0]) && isOnMap(z.bounds[1]))
+  // of its region's single zone: there, keep what falls on the plan. An
+  // embedded region is drawn in a square of its own.
+  const zones: Zone[] = [
+    ...tables.zones
+      .filter((z) => z.RegionID === id && !region.plan && (!region.drawnZones || region.drawnZones.includes(z.Name)))
+      .map((z) => ({
+        name: z.Name,
+        bounds: [pos(z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT), pos((z.OffsetX + z.Width) * ZONE_UNIT, (z.OffsetY + z.Height) * ZONE_UNIT)] as [LatLng, LatLng],
+      }))
+      .filter((z) => isOnMap(z.bounds[0]) && isOnMap(z.bounds[1])),
+    ...embedded.map((e) => ({ name: zoneOf(e.region)?.Name ?? regionNames.get(e.region) ?? `Region ${e.region}`, bounds: [...e.bounds] as [LatLng, LatLng] })),
+  ]
   const inZone = region.plan ? isOnMap : (p: LatLng) => zones.some((z) => contains(z.bounds, p))
+  // Map position of a point of a DOL region, when that region is on this map.
+  const place = (regionId: number, x: number, y: number): LatLng | null => {
+    const calibration = calibrationOf(regionId)
+    if (!calibration) return null
+    const p = toMap(calibration, x, y)
+    return inZone(p) ? p : null
+  }
 
   const templates = new Map(tables.templates.map((t) => [t.TemplateId, t]))
   const mobs: RegionData['mobs'] = []
   const npcs: Npc[] = []
   const masters: { x: number; y: number; kind: NpcKind }[] = []
   for (const m of tables.mobs) {
-    if (m.Region !== id || /TrainingDummy/.test(m.ClassType)) continue
-    const p = pos(m.X, m.Y)
-    if (!inZone(p)) continue
+    if (/TrainingDummy/.test(m.ClassType)) continue
+    const p = place(m.Region, m.X, m.Y)
+    if (!p) continue
     const template = templates.get(m.NPCTemplateID)
     const name = m.Name || template?.Name || '?'
     const kind = npcKind(m.ClassType)
@@ -147,7 +163,8 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
       mobs.push([name, m.Level > 0 ? String(m.Level) : (template?.Level ?? '?'), p[0], p[1]])
     } else {
       npcs.push({ name, title: m.Guild ?? '', kind: kind ?? 'other', pos: p })
-      if (kind === 'stable' || kind === 'boat') masters.push({ x: m.X, y: m.Y, kind })
+      // Paths are in the map's own region coordinates.
+      if ((kind === 'stable' || kind === 'boat') && m.Region === id) masters.push({ x: m.X, y: m.Y, kind })
     }
   }
 
@@ -159,36 +176,52 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     routes.push({ name: routeName(pathId), kind: master.kind === 'boat' ? 'boat' : 'horse', path: points.map((p) => pos(p.X, p.Y)) })
   }
 
-  const regionNames = new Map(tables.regions.map((r) => [r.RegionID, r.Description]))
   const entrances: Entrance[] = []
   for (const zp of tables.zonePoints) {
     const target = regionNames.get(zp.TargetRegion)
     // Zone points to regions missing from the Regions table lead nowhere.
-    if (zp.SourceRegion !== id || zp.SourceX <= 0 || zp.TargetRegion === id || !target) continue
-    const entrance: Entrance = { name: target, pos: pos(zp.SourceX, zp.SourceY) }
+    if (zp.SourceX <= 0 || zp.TargetRegion === zp.SourceRegion || !target) continue
+    const source = place(zp.SourceRegion, zp.SourceX, zp.SourceY)
+    if (!source) continue
+    const entrance: Entrance = { name: target, pos: source }
     const destination = mapForRegion(zp.TargetRegion, target, regionNames)
     if (destination) {
-      const arrival = destination.dol && toMap(destination.dol, zp.TargetX, zp.TargetY)
-      entrance.target = { map: destination.name, ...(arrival && isOnMap(arrival) && { pos: arrival }) }
+      const arrival = destination.calibration && toMap(destination.calibration, zp.TargetX, zp.TargetY)
+      entrance.target = { map: destination.region.name, ...(arrival && isOnMap(arrival) && { pos: arrival }) }
     }
     // The same entrance often has one zone point per realm.
     const duplicate = entrances.some((e) => e.name === entrance.name && Math.hypot(e.pos[0] - entrance.pos[0], e.pos[1] - entrance.pos[1]) < 1)
-    if (!duplicate && inZone(entrance.pos)) entrances.push(entrance)
+    if (!duplicate) entrances.push(entrance)
   }
 
-  const bindPoints = tables.bindPoints.filter((b) => b.Region === id).map((b) => pos(b.X, b.Y)).filter(inZone)
+  const bindPoints = tables.bindPoints.map((b) => place(b.Region, b.X, b.Y)).filter((p) => p !== null)
 
-  const gameZones: GameZone[] = tables.zones
-    .filter((z) => z.RegionID === id)
-    .map((z) => ({ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT] }))
+  const gameZones: GameZone[] = [
+    ...tables.zones
+      .filter((z) => z.RegionID === id)
+      .map((z): GameZone => ({ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT] })),
+    // An embedded region's zone has its own coordinates, valid in its drawn square only.
+    ...embedded.flatMap((e): GameZone[] => {
+      const z = zoneOf(e.region)
+      if (!z) return []
+      return [{ name: z.Name, origin: [z.OffsetX * ZONE_UNIT, z.OffsetY * ZONE_UNIT], size: [z.Width * ZONE_UNIT, z.Height * ZONE_UNIT], area: { bounds: [...e.bounds] as [LatLng, LatLng], scale: e.scale, offset: [...e.offset] as [number, number] } }]
+    }),
+  ]
 
   return { source, zones, mobs, npcs, routes, entrances, bindPoints, gameZones }
 }
 
-// The map showing a DOL region. Regions without one of their own can still
-// share a name with one that has a map: the Atlantis dungeons exist once per
-// realm and only the Albion copies have maps.
-function mapForRegion(regionId: number, name: string, regionNames: Map<number, string>): Region | undefined {
+// The map showing a DOL region, and the calibration of that region on it: the
+// map's own region, or one embedded in it. Regions without a map of their own
+// can still share a name with one that has a map: the Atlantis dungeons exist
+// once per realm and only the Albion copies have maps.
+function mapForRegion(regionId: number, name: string, regionNames: Map<number, string>): { region: Region; calibration?: Calibration } | undefined {
   const idOf = (r: Region) => r.dol?.region ?? r.dolRegion
-  return REGIONS.find((r) => idOf(r) === regionId) ?? REGIONS.find((r) => idOf(r) !== undefined && regionNames.get(idOf(r)!) === name)
+  const own = REGIONS.find((r) => idOf(r) === regionId) ?? REGIONS.find((r) => idOf(r) !== undefined && regionNames.get(idOf(r)!) === name)
+  if (own) return { region: own, calibration: own.dol }
+  for (const r of REGIONS) {
+    const e = r.embedded?.find((e) => e.region === regionId)
+    if (e) return { region: r, calibration: e }
+  }
+  return undefined
 }

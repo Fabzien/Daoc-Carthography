@@ -1,8 +1,6 @@
-import { toGame, toMap, type Region } from './data/regions'
+import { toGame, toMap, type Calibration } from './data/regions'
 import type { GameZone, LatLng } from './data/types'
 import type { SearchResult } from './search'
-
-type Calibration = NonNullable<Region['dol']>
 
 // In-game coordinates of a map point: global DOL ones, and the zone-relative
 // ones the /loc command shows when the point is in a zone.
@@ -13,10 +11,21 @@ export interface GameLocation {
   loc: [number, number] | null
 }
 
+function within([[lat1, lng1], [lat2, lng2]]: [LatLng, LatLng], [lat, lng]: LatLng): boolean {
+  return lat <= Math.max(lat1, lat2) && lat >= Math.min(lat1, lat2) && lng >= Math.min(lng1, lng2) && lng <= Math.max(lng1, lng2)
+}
+
+function inZone(zone: GameZone, x: number, y: number): boolean {
+  return x >= zone.origin[0] && x < zone.origin[0] + zone.size[0] && y >= zone.origin[1] && y < zone.origin[1] + zone.size[1]
+}
+
+// Inside the square of an embedded region (a capital), the coordinates are that
+// region's; elsewhere, the map's own.
 export function locate(dol: Calibration, zones: GameZone[], pos: LatLng): GameLocation {
-  const [x, y] = toGame(dol, pos)
-  const zone = zones.find((z) => x >= z.origin[0] && x < z.origin[0] + z.size[0] && y >= z.origin[1] && y < z.origin[1] + z.size[1]) ?? null
-  return { x, y, zone, loc: zone && [x - zone.origin[0], y - zone.origin[1]] }
+  const embedded = zones.find((z) => z.area && within(z.area.bounds, pos))
+  const [x, y] = toGame(embedded?.area ?? dol, pos)
+  const zone = embedded ?? zones.find((z) => !z.area && inZone(z, x, y)) ?? null
+  return { x, y, zone, loc: zone && inZone(zone, x, y) ? [x - zone.origin[0], y - zone.origin[1]] : null }
 }
 
 export interface ParsedCoordinates {
@@ -44,15 +53,15 @@ export function coordinateResults(query: string, dol: Calibration, zones: GameZo
   const parsed = parseCoordinates(query)
   if (!parsed) return []
   const results: SearchResult[] = []
-  const add = (id: string, name: string, detail: string, x: number, y: number) => {
-    const pos = toMap(dol, x, y)
-    if (isOnMap(pos)) results.push({ id, kind: 'location', name, detail, levels: null, positions: [pos] })
+  const add = (id: string, name: string, detail: string, x: number, y: number, area?: GameZone['area']) => {
+    const pos = toMap(area ?? dol, x, y)
+    if (isOnMap(pos) && (!area || within(area.bounds, pos))) results.push({ id, kind: 'location', name, detail, levels: null, positions: [pos] })
   }
   const named = parsed.zone.toLowerCase()
   for (const zone of zones) {
     if (named && !zone.name.toLowerCase().includes(named)) continue
     if (parsed.x >= zone.size[0] || parsed.y >= zone.size[1]) continue
-    add(`loc:${zone.name}:${parsed.x}:${parsed.y}`, `${zone.name} · loc ${parsed.x}, ${parsed.y}`, zone.name, zone.origin[0] + parsed.x, zone.origin[1] + parsed.y)
+    add(`loc:${zone.name}:${parsed.x}:${parsed.y}`, `${zone.name} · loc ${parsed.x}, ${parsed.y}`, zone.name, zone.origin[0] + parsed.x, zone.origin[1] + parsed.y, zone.area)
   }
   if (!named) {
     const zone = locate(dol, zones, toMap(dol, parsed.x, parsed.y)).zone

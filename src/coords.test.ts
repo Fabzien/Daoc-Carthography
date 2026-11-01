@@ -1,6 +1,6 @@
 import { coordinateResults, locate, parseCoordinates } from './coords'
 import { REGIONS, toMap } from './data/regions'
-import type { GameZone } from './data/types'
+import type { GameZone, LatLng } from './data/types'
 
 const ZONE = 8192
 const albion = REGIONS.find((r) => r.name === 'Albion-Classic')!.dol!
@@ -45,5 +45,17 @@ describe('coordinateResults', () => {
   it('offers every zone when none is named, plus global coordinates inside a zone', () => {
     expect(coordinateResults('1000, 2000', albion, zones).map((r) => r.detail)).toEqual(['Camelot Hills', 'Salisbury Plains'])
     expect(coordinateResults(`${70 * ZONE} ${62 * ZONE}`, albion, zones).map((r) => r.name)).toEqual([`X ${70 * ZONE}, Y ${62 * ZONE}`])
+  })
+})
+
+describe('locate in an embedded capital', () => {
+  it("uses the capital's own coordinates inside its square", () => {
+    const area = { bounds: [[-10, 10], [-42, 42]] as [LatLng, LatLng], scale: 300, offset: [0, 0] as [number, number] }
+    const city: GameZone = { name: 'City of Camelot', origin: [8192, 8192], size: [65536, 65536], area }
+    const location = locate(albion, [...zones, city], [-20, 30])
+    expect(location.zone?.name).toBe('City of Camelot')
+    expect([location.x, location.y]).toEqual([9000, 6000])
+    expect(location.loc).toBeNull()
+    expect(locate(albion, [...zones, city], [-20, 50]).zone?.name).not.toBe('City of Camelot')
   })
 })
