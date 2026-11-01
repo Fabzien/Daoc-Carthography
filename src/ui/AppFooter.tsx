@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { useRegionData } from '../data/regionData'
+import { publicUrl } from '../publicUrl'
 
 const DISCLAIMER =
   'Positions of mobs, NPCs, entrances, routes and bind points come from the Dawn of Light emulator public ' +
@@ -17,7 +18,7 @@ export default function AppFooter() {
   return (
     <footer className="footer">
       <a href="https://github.com/Fabzien/Daoc-Carthography" target="_blank" rel="noreferrer">
-        <img src="/assets/GitHub-Mark-Light-32px.png" alt="GitHub repository" />
+        <img src={publicUrl('/assets/GitHub-Mark-Light-32px.png')} alt="GitHub repository" />
       </a>
       <span title={`Commit ${__APP_COMMIT__}`}>
         v{__APP_VERSION__} · {__APP_COMMIT__}

@@ -1,4 +1,5 @@
 import { use } from 'react'
+import { publicUrl } from '../publicUrl'
 import { buildIndex, type SearchResult } from '../search'
 import { useMapStore } from '../store'
 import type { RegionName } from './regions'
@@ -13,7 +14,7 @@ const indexes = new WeakMap<RegionData, SearchResult[]>()
 export function loadRegionData(region: RegionName): Promise<RegionData> {
   let data = cache.get(region)
   if (!data) {
-    data = fetch(`/data/${encodeURIComponent(region)}.json`)
+    data = fetch(publicUrl(`/data/${encodeURIComponent(region)}.json`))
       .then((response) => {
         if (!response.ok) throw new Error(`No data for ${region}: HTTP ${response.status} (run npm run import-dol)`)
         return response.json() as Promise<RegionData>

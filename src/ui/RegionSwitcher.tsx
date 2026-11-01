@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getRegion, REGIONS, thumbnailUrl, type RegionGroup } from '../data/regions'
+import { publicUrl } from '../publicUrl'
 import { useMapStore } from '../store'
 
 const GROUPS = [...new Set(REGIONS.map((r) => r.group))] as RegionGroup[]
@@ -28,7 +29,7 @@ export default function RegionSwitcher() {
                       setOpen(false)
                     }}
                   >
-                    <img src={thumbnailUrl(region)} alt="" loading="lazy" />
+                    <img src={publicUrl(thumbnailUrl(region))} alt="" loading="lazy" />
                     <span>{region.label}</span>
                   </button>
                 ))}
@@ -38,7 +39,7 @@ export default function RegionSwitcher() {
         </div>
       )}
       <button className="region-current" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <img src={thumbnailUrl(current)} alt="" />
+        <img src={publicUrl(thumbnailUrl(current))} alt="" />
         <span>{current.label}</span>
       </button>
     </div>

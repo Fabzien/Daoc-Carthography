@@ -3,7 +3,7 @@
 Daoc-Carthography is a "Google maps" like maps of Dark Age Of Camelot MMORPG (https://www.darkageofcamelot.com/).
 
 ## Demo
-[Demo](https://master.d2y2lcc78qgon4.amplifyapp.com/)
+[Demo](https://fabzien.github.io/Daoc-Carthography/)
 
 ## Work in progress
 * Add old frontiers
@@ -73,6 +73,19 @@ npm run lint
 npm run import-dol # regenerate public/data/ from the DOL public database
 npm run import-cartographe # regenerate the Atlantis, housing, battleground tiles and a few dungeon plans
 npm run import-camelotinsider # regenerate the dungeon tiles and Jordheim's drawing
+```
+
+## Deployment
+Every push to `master` is built and published to GitHub Pages by `.github/workflows/deploy.yml`
+(lint, tests, then `npm run build` under the repository's path). Other branches and pull requests run the
+same checks in `.github/workflows/ci.yml`. One-time setup: in the repository's Settings > Pages, set
+Build and deployment > Source to "GitHub Actions".
+
+To test a build under the Pages path locally:
+
+```bash
+BASE_PATH=/Daoc-Carthography/ npm run build
+BASE_PATH=/Daoc-Carthography/ npx vite preview   # http://localhost:4173/Daoc-Carthography/
 ```
 
 ## Data

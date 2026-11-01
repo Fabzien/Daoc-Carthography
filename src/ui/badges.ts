@@ -1,5 +1,6 @@
 import { Anvil, createElement, Crown, DoorOpen, GraduationCap, HandCoins, HeartPulse, Shield, Ship, Skull, Sparkles, User, Vault, type IconNode } from 'lucide'
 import type { MobTier, NpcKind } from '../data/types'
+import { publicUrl } from '../publicUrl'
 import { BOSS_TIERS, NPC_KINDS, RESULT_KINDS } from './kinds'
 
 // Round badges with a white pictogram, used as map icons (Leaflet div icons)
@@ -28,7 +29,7 @@ function glyph(pictogram: Pictogram): string {
   if (!html) {
     html =
       typeof pictogram === 'string'
-        ? `<img src="${pictogram}" alt="" />`
+        ? `<img src="${publicUrl(pictogram)}" alt="" />`
         : createElement(pictogram, { width: '100%', height: '100%', stroke: 'currentColor', 'stroke-width': 2.5 }).outerHTML
     glyphs.set(pictogram, html)
   }

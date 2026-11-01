@@ -15,6 +15,9 @@ function gitCommit(): string {
 }
 
 export default defineConfig({
+  // Path the site is served from: '/' by default, '/<repository>/' for GitHub
+  // Pages (set by .github/workflows/deploy.yml).
+  base: process.env.BASE_PATH ?? '/',
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(version),

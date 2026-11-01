@@ -1,0 +1,21 @@
+name: CI
+
+# master is checked by the deploy workflow.
+on:
+  push:
+    branches-ignore: [master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx vitest run
+      - run: npm run build

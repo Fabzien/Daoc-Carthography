@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A "Google Maps"-style interactive web map of the Dark Age of Camelot MMORPG world: one map per realm and expansion, with toggleable layers for zones, dungeon entrances, horse/boat routes, NPCs, mobs and bind points generated from the Dawn of Light server emulator's database. It's a Vite + React 19 + TypeScript app using react-leaflet 5 and Zustand. It's fully static: no backend or external API. The demo is hosted on AWS Amplify.
+A "Google Maps"-style interactive web map of the Dark Age of Camelot MMORPG world: one map per realm and expansion, with toggleable layers for zones, dungeon entrances, horse/boat routes, NPCs, mobs and bind points generated from the Dawn of Light server emulator's database. It's a Vite + React 19 + TypeScript app using react-leaflet 5 and Zustand. It's fully static: no backend or external API. It's deployed to GitHub Pages (https://fabzien.github.io/Daoc-Carthography/) on every push to `master`.
 
 ## Commands
 
@@ -65,6 +65,8 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 - `AppFooter` (bottom center) shows the app version and build commit (`__APP_VERSION__` from package.json and `__APP_COMMIT__` from `git rev-parse`, injected by `define` in vite.config.ts, typed in `src/globals.d.ts`; restart the dev server after changing them), the DOL release of the current map's data, and a disclaimer that positions may be inaccurate.
 - `SelectionOverlay` draws highlights in its own `selection` pane, above the marker pane (z-index 620 vs 600) so icon markers don't hide them. That pane's canvas covers the whole map, so it has `pointer-events: none`; without it, nothing below receives hover or clicks.
 
+**Deployment.** `.github/workflows/deploy.yml` builds and publishes to GitHub Pages on pushes to `master` (lint, tests, build with `BASE_PATH` from `actions/configure-pages`); `ci.yml` runs the same checks on other branches and PRs. The site is served under `/Daoc-Carthography/`: Vite's `base` comes from `BASE_PATH` (default `/`), and every URL of a `public/` file (tiles, data, thumbnails, images) must go through `publicUrl()` ([src/publicUrl.ts](src/publicUrl.ts)); `regions.ts` keeps root-relative paths. Check with `BASE_PATH=/Daoc-Carthography/ npm run build && npx vite preview`.
+
 **Leaflet setup.** Leaflet CSS is imported from the package in `main.tsx`. No marker uses Leaflet's default icon (entrances have their own, NPCs and mobs use div icons or canvas), so the default icon path, which breaks under bundlers, isn't configured.
 
 **Checking calibration.** The in-game coordinates under the cursor (`CursorLocation`) and coordinate search are the way to check a map's calibration.
@@ -78,10 +80,10 @@ TypeScript is pinned to 6.0.x because typescript-eslint doesn't support TS 7 yet
 
 Backlog of suggested improvements, roughly by priority. Remove an item once it's done.
 
-**Before deploying**
-- Deployment: the site is fully static. GitHub Pages fits (`dist/` is ~775 MB of the 1 GB limit, 71k files), but every root-absolute URL (`/maps/…`, `/data/…`, `/images/…`, `/assets/…` in `regions.ts`, `regionData.ts`, `EntrancesOverlay.tsx`, `App.tsx`) must go through `import.meta.env.BASE_URL` with Vite's `base` set to `/Daoc-Carthography/`, plus a GitHub Actions workflow deploying `dist/`. The old AWS Amplify setup needs `dist/` as output folder and Node ≥ 22.18.
-- Licensing: the DAoC Cartographe maps are freeware "for private use"; publishing them is the owner's call.
-- CI (GitHub Actions): typecheck, lint, tests and build on every push. Move the Playwright scenario used during development (search, selection, map switch, entrances, coordinates) into the repo as an e2e test.
+**Deployment and quality**
+- Size: the deployed site is ~840 MB (71k files) against GitHub Pages' 1 GB limit, almost all PNG tiles. Before adding many maps, switch tiles to JPEG/WebP.
+- Licensing: the DAoC Cartographe and Camelot Insider maps come without a license (Cartographe is freeware "for private use"); publishing them is the owner's call.
+- e2e tests: move the Playwright scenarios used during development (search, selection, map switch, entrances, coordinates, stable routes) into the repo and CI.
 
 **Google Maps-like experience**
 - Shareable URLs: map, query and selection in the URL (`?map=Thidranki&q=wolf`); a reload currently loses everything.

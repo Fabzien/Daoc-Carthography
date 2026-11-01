@@ -4,6 +4,7 @@ import { MapContainer, Pane, TileLayer, useMap, useMapEvents, ZoomControl } from
 import { locate } from '../coords'
 import { useRegionData } from '../data/regionData'
 import { getRegion } from '../data/regions'
+import { publicUrl } from '../publicUrl'
 import { useMapStore, type LayerKey } from '../store'
 import BindPointsOverlay from './overlays/BindPointsOverlay'
 import BossesOverlay from './overlays/BossesOverlay'
@@ -102,7 +103,7 @@ export default function MapView() {
       crs={CRS.Simple}
       preferCanvas
     >
-      <TileLayer key={region} url={tiles} maxNativeZoom={maxNativeZoom} />
+      <TileLayer key={region} url={publicUrl(tiles)} maxNativeZoom={maxNativeZoom} />
       <ZoomControl position="bottomright" />
       <Suspense fallback={null}>
         <FitRegion />
