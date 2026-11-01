@@ -1,4 +1,4 @@
-import type { MobTier, Npc, NpcKind } from '../data/types'
+import type { MobTier, Npc, NpcKind, Route } from '../data/types'
 import type { ResultKind, SearchResult } from '../search'
 
 export const NPC_KINDS: Record<NpcKind, { color: string; label: string }> = {
@@ -38,6 +38,12 @@ export const RESULT_KINDS: Record<ResultKind, { color: string; label: string }> 
 
 export const ROUTE_COLORS = { horse: '#d4a373', boat: '#4ea8de' }
 
+// How a route is travelled: dragonfly tickets are sold by stable masters too.
+export function routeTravel(route: Route): 'horse' | 'dragonfly' | 'boat' {
+  if (route.kind === 'boat') return 'boat'
+  return /dragonfly/i.test(route.name) ? 'dragonfly' : 'horse'
+}
+
 // Green for low levels to red for level 60+.
 export function levelColor(levels: [number, number] | null): string {
   if (!levels) return '#888'
@@ -58,8 +64,12 @@ export function describe(result: SearchResult): string {
     }
     case 'npc':
       return result.detail ? `NPC · ${result.detail}` : 'NPC'
-    case 'route':
-      return result.detail === 'boat' ? 'Boat route' : 'Horse route'
+    case 'route': {
+      const route = result.routes?.[0]
+      if (!route) return result.detail === 'boat' ? 'Boat route' : 'Horse route'
+      const travel = routeTravel(route)
+      return `${travel[0].toUpperCase()}${travel.slice(1)} route · ${route.master} → ${route.to}`
+    }
     case 'location':
       return result.detail ? `Game location · ${result.detail}` : 'Game location'
     default:

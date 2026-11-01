@@ -1,5 +1,5 @@
 import { REGIONS, toMap } from '../../src/data/regions.ts'
-import { buildRegionData, mobTier, npcKind, routeName, type DolMob, type DolTables } from './transform.ts'
+import { buildRegionData, mobTier, npcKind, routeDestination, routeName, type DolMob, type DolTables } from './transform.ts'
 
 const albion = REGIONS.find((r) => r.name === 'Albion-Classic')!
 const ZONE = 8192
@@ -40,6 +40,11 @@ describe('routeName', () => {
   it('names stable routes after their ends', () => {
     expect(routeName('HS_SnowdoniaFortress_Humberton')).toBe('Snowdonia Fortress → Humberton')
     expect(routeName('bt_theisle_fintain')).toBe('Theisle → Fintain')
+  })
+
+  it('reads a ticket route destination without its handler name', () => {
+    expect(routeDestination('Dragonfly_ticket_to_Castle_SauvageFlambon')).toBe('Castle Sauvage')
+    expect(routeDestination('HS_SnowdoniaFortress_Humberton')).toBe('Humberton')
   })
 
   it('falls back to a readable path id', () => {
@@ -93,22 +98,37 @@ describe('buildRegionData', () => {
     expect(data.mobs).toEqual([])
   })
 
-  it('keeps paths that start at a stable master', () => {
+  it('keeps paths that start at a stable master, with their destination', () => {
     const data = buildRegionData(
       albion,
       tables({
-        mobs: [mob({ Realm: 1, ClassType: 'DOL.GS.GameStableMaster' })],
+        mobs: [
+          mob({ Name: 'Flambon', Realm: 1, ClassType: 'DOL.GS.GameStableMaster' }),
+          mob({ Name: 'Uliam', Realm: 1, ClassType: 'DOL.GS.GameStableMaster', X: inZone.X + 5000 }),
+        ],
         pathPoints: [
           { PathID: 'HS_A_B', Step: 2, X: inZone.X + 5000, Y: inZone.Y },
           { PathID: 'HS_A_B', Step: 1, X: inZone.X + 100, Y: inZone.Y },
+          // Uliam's own route names his town; the ticket route ending at him leads there.
+          { PathID: 'HS_Caer_A', Step: 1, X: inZone.X + 5000, Y: inZone.Y },
+          { PathID: 'HS_Caer_A', Step: 2, X: inZone.X, Y: inZone.Y },
+          { PathID: 'Dragonfly_ticket_to_Somewhere_Flambon', Step: 1, X: inZone.X, Y: inZone.Y },
+          { PathID: 'Dragonfly_ticket_to_Somewhere_Flambon', Step: 2, X: inZone.X + 5000, Y: inZone.Y },
+          // A guard patrol starting next to a stable master isn't a route.
+          { PathID: 'Cotswold_Guard_2', Step: 1, X: inZone.X, Y: inZone.Y },
+          { PathID: 'Cotswold_Guard_2', Step: 2, X: inZone.X + 3000, Y: inZone.Y },
           { PathID: 'patrol', Step: 1, X: inZone.X + 20000, Y: inZone.Y },
           { PathID: 'patrol', Step: 2, X: inZone.X + 30000, Y: inZone.Y },
         ],
       }),
       'test',
     )
-    expect(data.routes).toHaveLength(1)
-    expect(data.routes[0]).toMatchObject({ name: 'A → B', kind: 'horse' })
+    expect(data.routes.map((r) => [r.name, r.master, r.to])).toEqual([
+      ['A → B', 'Flambon', 'Caer'],
+      ['Caer → A', 'Uliam', 'A'],
+      ['Dragonfly Ticket To Somewhere Flambon', 'Flambon', 'Caer'],
+    ])
+    expect(data.routes[0].kind).toBe('horse')
     expect(data.routes[0].path[0][1]).toBeLessThan(data.routes[0].path[1][1])
   })
 

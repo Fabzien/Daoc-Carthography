@@ -1,4 +1,4 @@
-import type { Entrance, LatLng, MobTier, RegionData } from './data/types'
+import type { Entrance, LatLng, MobTier, RegionData, Route } from './data/types'
 
 export type ResultKind = 'mob' | 'npc' | 'entrance' | 'zone' | 'route' | 'location'
 
@@ -15,6 +15,13 @@ export interface SearchResult {
   target?: Entrance['target']
   // For a notable mob: named boss or epic encounter.
   tier?: MobTier
+  // For a stable or boat master: the routes departing from them. For a route: itself.
+  routes?: Route[]
+}
+
+// A route as a search result, shown whole.
+export function routeResult(route: Route): SearchResult {
+  return { id: `route:${route.master}:${route.name}`, kind: 'route', name: route.name, detail: route.kind, levels: null, positions: route.path, routes: [route] }
 }
 
 export interface LevelFilter {
@@ -71,6 +78,11 @@ export function buildIndex(data: RegionData): SearchResult[] {
     if (tier) results.get(`mob:${name}:`)!.tier = tier
   }
   for (const npc of data.npcs) group(results, 'npc', npc.name, npc.title, npc.pos)
+  // Stable and boat masters list the routes leaving from where they stand.
+  for (const route of data.routes) {
+    const master = [...results.values()].find((r) => r.kind === 'npc' && r.name === route.master && r.positions.some(([lat, lng]) => lat === route.from[0] && lng === route.from[1]))
+    if (master) (master.routes ??= []).push(route)
+  }
   for (const entrance of data.entrances) {
     group(results, 'entrance', entrance.name, '', entrance.pos)
     const result = results.get(`entrance:${entrance.name}:`)!
@@ -80,9 +92,9 @@ export function buildIndex(data: RegionData): SearchResult[] {
   for (const zone of data.zones) {
     results.set(`zone:${zone.name}`, { id: `zone:${zone.name}`, kind: 'zone', name: zone.name, detail: '', levels: null, positions: zone.bounds })
   }
-  for (const [i, route] of data.routes.entries()) {
-    const id = `route:${i}`
-    results.set(id, { id, kind: 'route', name: route.name, detail: route.kind, levels: null, positions: route.path })
+  for (const route of data.routes) {
+    const result = routeResult(route)
+    results.set(result.id, result)
   }
   return [...results.values()]
 }

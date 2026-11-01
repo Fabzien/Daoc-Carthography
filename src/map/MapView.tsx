@@ -79,7 +79,9 @@ function SelectionController() {
 
   useEffect(() => {
     if (!selected) return
-    map.flyToBounds(latLngBounds(selected.positions), { maxZoom: 5, paddingTopLeft: [PANEL_WIDTH, 60], paddingBottomRight: [60, 60] })
+    // A stable master's routes are framed with them.
+    const points = [...selected.positions, ...(selected.routes ?? []).flatMap((r) => r.path)]
+    map.flyToBounds(latLngBounds(points), { maxZoom: 5, paddingTopLeft: [PANEL_WIDTH, 60], paddingBottomRight: [60, 60] })
   }, [map, selected])
 
   useMapEvents({ click: () => select(null) })

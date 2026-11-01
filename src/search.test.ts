@@ -12,7 +12,7 @@ const data: RegionData = {
     ['Golestandt', '80', -80, 150, 2],
   ],
   npcs: [{ name: 'Raguel', title: 'Armor Merchant', kind: 'merchant', pos: [-62, 132] }],
-  routes: [{ name: 'Camelot → Humberton', kind: 'horse', path: [[-60, 130], [-70, 140]] }],
+  routes: [{ name: 'Camelot → Humberton', kind: 'horse', path: [[-60, 130], [-70, 140]], master: 'Edarg', from: [-60, 130], to: 'Humberton' }],
   entrances: [{ name: 'Darkness Falls', pos: [-81, 152] }],
   bindPoints: [],
   gameZones: [],
@@ -64,5 +64,13 @@ describe('notable mobs', () => {
   it('carries the boss tier into the search result', () => {
     expect(search(index, 'golestandt', ANY_LEVEL)[0]).toMatchObject({ kind: 'mob', tier: 2 })
     expect(search(index, 'wolf', ANY_LEVEL)[0].tier).toBeUndefined()
+  })
+})
+
+describe('stable masters', () => {
+  it('lists the routes departing from where the master stands', () => {
+    const withMaster: RegionData = { ...data, npcs: [...data.npcs, { name: 'Edarg', title: 'Stable Master', kind: 'stable', pos: [-60, 130] }] }
+    const [master] = search(buildIndex(withMaster), 'edarg', ANY_LEVEL)
+    expect(master.routes?.map((r) => r.to)).toEqual(['Humberton'])
   })
 })

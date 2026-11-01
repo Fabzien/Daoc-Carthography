@@ -29,6 +29,10 @@ export interface Route {
   name: string
   kind: 'horse' | 'boat'
   path: LatLng[]
+  // The stable or boat master it departs from, and where it leads.
+  master: string
+  from: LatLng
+  to: string
 }
 
 export interface Entrance {

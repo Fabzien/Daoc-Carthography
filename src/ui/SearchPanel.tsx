@@ -3,9 +3,9 @@ import { coordinateResults } from '../coords'
 import { useRegionData, useSearchIndex } from '../data/regionData'
 import { getRegion, isRegionName, type RegionName } from '../data/regions'
 import { useEnter } from '../map/overlays/useEnter'
-import { isAnyLevel, MAX_LEVEL, search, type SearchResult } from '../search'
+import { isAnyLevel, MAX_LEVEL, routeResult, search, type SearchResult } from '../search'
 import { useMapStore, type LayerKey } from '../store'
-import { BOSS_TIERS, describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS } from './kinds'
+import { BOSS_TIERS, describe, levelColor, NPC_KINDS, npcKindCounts, RESULT_KINDS, ROUTE_COLORS, routeTravel } from './kinds'
 import { npcBadgeHtml } from './badges'
 
 const RESULT_LIMIT = 100
@@ -163,7 +163,12 @@ function PlaceCard({ result }: { result: SearchResult }) {
   const select = useMapStore((s) => s.select)
   const region = useMapStore((s) => s.region)
   const enter = useEnter()
+  const index = useSearchIndex()
   const target = result.target && isRegionName(result.target.map) ? result.target : undefined
+  // A route's card links back to its master, whose card lists all their routes.
+  const route = result.kind === 'route' ? result.routes?.[0] : undefined
+  const master =
+    route && index.find((r) => r.kind === 'npc' && r.name === route.master && r.positions.some(([lat, lng]) => lat === route.from[0] && lng === route.from[1]))
   return (
     <div className="place-card">
       <button className="link-button" onClick={() => select(null)}>
@@ -183,6 +188,33 @@ function PlaceCard({ result }: { result: SearchResult }) {
         <button className="primary-button secondary-button" onClick={() => enter(target)}>
           Enter {getRegion(target.map as RegionName).label} →
         </button>
+      )}
+      {master && (
+        <p>
+          <button className="link-button" onClick={() => select(master)}>
+            All routes from {master.name} →
+          </button>
+        </p>
+      )}
+      {result.kind === 'npc' && result.routes && (
+        <>
+          <h3 className="card-section">
+            {result.routes.length} route{result.routes.length > 1 ? 's' : ''} from here
+          </h3>
+          <ul className="route-list">
+            {[...result.routes]
+              .sort((a, b) => a.to.localeCompare(b.to) || routeTravel(a).localeCompare(routeTravel(b)))
+              .map((r) => (
+                <li key={r.name}>
+                  <button onClick={() => select(routeResult(r))}>
+                    <span className="dot" style={{ background: ROUTE_COLORS[r.kind] }} />
+                    {r.to}
+                    <small>{routeTravel(r)}</small>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </>
       )}
     </div>
   )

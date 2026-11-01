@@ -66,8 +66,10 @@ export interface DolTables {
 
 // Zone offsets and sizes are expressed in units of 8192 game units.
 const ZONE_UNIT = 8192
-// A stable master's route starts next to them (DOL itself checks 500 units).
+// A stable master's route starts next to them (DOL itself checks 500 units),
+// and usually ends next to the destination's master.
 const ROUTE_START_DISTANCE = 1000
+const ROUTE_ARRIVAL_DISTANCE = 1500
 const MAP_SIZE = 256
 // Zones on the map's edge can overshoot it slightly because of calibration.
 const MAP_TOLERANCE = 1
@@ -128,11 +130,28 @@ export function npcKind(classType: string): NpcKind | null {
   return NPC_KINDS.find(([pattern]) => pattern.test(classType))?.[1] ?? null
 }
 
+const words = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b[a-z]/g, (c) => c.toUpperCase())
+
+// Departure and destination of a stable route id: "HS_SnowdoniaFortress_Humberton".
+function routeEnds(pathId: string): [string, string] | null {
+  const match = /^(?:hs|bt)_([^_]+)_([^_]+)$/i.exec(pathId)
+  return match && [words(match[1]), words(match[2])]
+}
+
 // "HS_SnowdoniaFortress_Humberton" -> "Snowdonia Fortress → Humberton"
 export function routeName(pathId: string): string {
-  const words = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b[a-z]/g, (c) => c.toUpperCase())
-  const match = /^(?:hs|bt)_([^_]+)_([^_]+)$/i.exec(pathId)
-  return match ? `${words(match[1])} → ${words(match[2])}` : words(pathId.replace(/_/g, ' '))
+  const ends = routeEnds(pathId)
+  return ends ? `${ends[0]} → ${ends[1]}` : words(pathId.replace(/_/g, ' '))
+}
+
+// Destination from the route id alone, when no master stands at its end:
+// "Dragonfly_ticket_to_Castle_SauvageFlambon" -> "Castle Sauvage" (the last
+// word is the dragonfly handler's name).
+export function routeDestination(pathId: string): string {
+  const ends = routeEnds(pathId)
+  if (ends) return ends[1]
+  const ticket = /ticket to (.+)$/i.exec(words(pathId.replace(/_/g, ' ')))
+  return ticket ? ticket[1].replace(/\s+\S+$/, '') : words(pathId.replace(/_/g, ' '))
 }
 
 function isOnMap([lat, lng]: LatLng): boolean {
@@ -199,7 +218,7 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
   for (const m of tables.mobs) if (m.Realm === 0) spawnsByName.set(nameOf(m), (spawnsByName.get(nameOf(m)) ?? 0) + 1)
   const mobs: RegionData['mobs'] = []
   const npcs: Npc[] = []
-  const masters: { x: number; y: number; kind: NpcKind }[] = []
+  const masters: { x: number; y: number; kind: NpcKind; name: string; pos: LatLng }[] = []
   for (const m of tables.mobs) {
     if (/TrainingDummy/.test(m.ClassType)) continue
     const p = place(m.Region, m.X, m.Y)
@@ -215,17 +234,33 @@ export function buildRegionData(region: Region, tables: DolTables, source: strin
     } else {
       npcs.push({ name, title: m.Guild ?? '', kind: kind ?? 'other', pos: p })
       // Paths are in the map's own region coordinates.
-      if ((kind === 'stable' || kind === 'boat') && m.Region === id) masters.push({ x: m.X, y: m.Y, kind })
+      if ((kind === 'stable' || kind === 'boat') && m.Region === id) masters.push({ x: m.X, y: m.Y, kind, name, pos: p })
     }
   }
 
-  const routes: Route[] = []
-  for (const [pathId, points] of groupPaths(tables.pathPoints)) {
-    const start = points[0]
-    const master = masters.find((s) => Math.hypot(s.x - start.X, s.y - start.Y) < ROUTE_START_DISTANCE)
-    if (!master || points.length < 2) continue
-    routes.push({ name: routeName(pathId), kind: master.kind === 'boat' ? 'boat' : 'horse', path: points.map((p) => pos(p.X, p.Y)) })
+  const masterNear = (x: number, y: number, distance: number) => masters.find((s) => Math.hypot(s.x - x, s.y - y) < distance)
+  // Paths starting at a master; guard patrols can start next to one too.
+  const paths = [...groupPaths(tables.pathPoints)]
+    .map(([pathId, points]) => ({ pathId, points, master: masterNear(points[0].X, points[0].Y, ROUTE_START_DISTANCE) }))
+    .filter((p) => p.master && p.points.length >= 2 && !/patrol|guard/i.test(p.pathId))
+  // A master's town, named by the routes that start from it ("HS_<town>_<destination>").
+  const towns = new Map<object, string>()
+  for (const { pathId, master } of paths) {
+    const town = routeEnds(pathId)?.[0]
+    if (town && !towns.has(master!)) towns.set(master!, town)
   }
+  const routes: Route[] = paths.map(({ pathId, points, master }) => {
+    const end = points[points.length - 1]
+    const arrival = masterNear(end.X, end.Y, ROUTE_ARRIVAL_DISTANCE)
+    return {
+      name: routeName(pathId),
+      kind: master!.kind === 'boat' ? 'boat' : 'horse',
+      path: points.map((p) => pos(p.X, p.Y)),
+      master: master!.name,
+      from: master!.pos,
+      to: (arrival && towns.get(arrival)) ?? routeDestination(pathId),
+    }
+  })
 
   const entrances: Entrance[] = []
   for (const zp of tables.zonePoints) {

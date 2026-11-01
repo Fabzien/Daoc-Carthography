@@ -390,6 +390,48 @@ input {
   pointer-events: none;
 }
 
+/* Routes listed in a stable master's card */
+
+.card-section {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.route-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.route-list button:hover {
+  background: #f1f3f4;
+}
+
+.route-list small {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+/* Destination labels of highlighted routes */
+.leaflet-tooltip.route-destination {
+  font-weight: 600;
+}
+
 /* Map picker (bottom left) */
 
 .region-switcher {
