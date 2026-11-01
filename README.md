@@ -1,114 +1,97 @@
-# Daoc-Carthography
+# DAoC Carthography
 
-Daoc-Carthography is a "Google maps" like maps of Dark Age Of Camelot MMORPG (https://www.darkageofcamelot.com/).
+An interactive, Google Maps-like map of the [Dark Age of Camelot](https://www.darkageofcamelot.com/) world:
+every realm, the frontiers, Atlantis, housing, battlegrounds and dungeons, with their mobs, bosses, NPCs,
+horse routes and dungeon entrances.
 
-## Demo
-[Demo](https://fabzien.github.io/Daoc-Carthography/)
-
-## Work in progress
-* Add old frontiers
-* Add configurable markers for freeshard
-* Add quests 
-
-Feel free to suggest more features
+**[Open the map →](https://fabzien.github.io/Daoc-Carthography/)**
 
 ## Features
-A Google Maps-like interface: search mobs, NPCs, dungeons, zones and routes by name,
-filter mobs by level, click a result or a point on the map to see it and all its locations,
-and switch maps from the bottom-left picker. Click a dungeon entrance to open the map it leads to.
-The in-game position under the cursor is shown as zone + `/loc`, and the search box accepts
-coordinates (`27323, 8475`, `Camelot Hills 27323 8475`, or a pasted `/loc` line).
 
-Toggleable layers, generated from the [Dawn of Light](https://github.com/Dawn-of-Light/DOLSharp) server emulator's database:
-* Dungeon entrances
-* Horse and boat routes
-* NPCs (merchants, trainers, healers, stable masters, guards...)
-* Mobs, colored by level
-* Bosses: epic encounters (realm dragons, Apocalypse, Queen Kula…) and named bosses, always shown
-* Bind points
+- **Search** mobs, NPCs, dungeons, zones and routes by name, or an NPC by title ("armor merchant").
+- **Filter mobs by level**: type a range and only those mobs remain on the map.
+- **Bosses always visible**: epic encounters (the realm dragons, Apocalypse, Queen Kula…) and named bosses.
+- **Stable masters**: select one to see every route leaving from them and where it leads (horse, dragonfly, boat).
+- **Dungeon entrances**: click one to open the dungeon's map; click the exit to come back out.
+- **In-game coordinates**: the zone and `/loc` under the cursor, and coordinate search
+  (`27323, 8475`, `Camelot Hills 27323 8475`, or a pasted `/loc` line).
+- **Layers** to toggle: mobs (grouped into bubbles when zoomed out), bosses, NPCs (with a legend that filters by role),
+  dungeon entrances, routes, bind points.
 
-## Zones
-The following zones are currenctly available:
+Positions come from the database of a server emulator and from the calibration of each map: they may be inaccurate,
+or differ from the live game.
 
-### Albion
-* Classic
-* Shrouded Isles
+## Maps
 
-### Hibernian
-* Classic
-* Shrouded Isles
+| Group | Maps |
+|---|---|
+| Albion, Hibernia, Midgard | Classic and Shrouded Isles, with Camelot, Tír na Nóg and Jordheim drawn in place |
+| Frontiers | New Frontiers, Darkness Falls, Demon's Breach, Passage of Conflict, Summoner's Hall |
+| Trials of Atlantis | Atlantis (one per realm), the Ruins of Atlantis, the Atlantis dungeons |
+| Dungeons | 45 maps: realm dungeons and the Catacombs dungeons (Abandoned Mines, Brimstone Caverns, Roman Aqueducts, Burial Grounds…) |
+| Housing | Albion, Hibernia, Midgard |
+| Battlegrounds | The Proving Grounds, The Lion's Den, The Hills of Claret, Killaloe, Thidranki, Braemar, Wilton, Molvik, Leirvik |
 
-### Midgard
-* Classic
-* Shrouded Isles
+A few dungeons (Tur Suil, Veil Rift, two of the Abandoned Mines, and those with almost no spawns in the database)
+are shown as maps only, without mobs.
 
-### Frontiers
-* New frontiers
+## Data sources and credits
 
-### Trials of Atlantis
-* Atlantis (one map per realm) and the Ruins of Atlantis
-
-### Housing
-* Albion, Hibernia, Midgard
-
-### Battlegrounds
-* The Proving Grounds, The Lion's Den, The Hills of Claret, Killaloe, Thidranki, Braemar, Wilton, Molvik, Leirvik
-
-### Capitals and dungeons
-* Camelot, Tir na Nóg and Jordheim are drawn on their realm's classic map, with their NPCs
-* 45 dungeon maps: realm dungeons, Catacombs dungeons (Abandoned Mines, Brimstone Caverns, Roman Aqueducts, Burial
-  Grounds…), Darkness Falls, Demon's Breach, Passage of Conflict, Summoner's Hall and the Atlantis dungeons.
-  Most show the DOL data; a few (Tur Suil, Veil Rift, two of the Abandoned Mines, and dungeons with almost no spawns in the
-  database) are shown as maps only.
+- **Mobs, NPCs, routes, entrances, bind points**: the [Dawn of Light](https://github.com/Dawn-of-Light/DOLSharp)
+  server emulator's public database, [Eve-of-Darkness/db-public](https://github.com/Eve-of-Darkness/db-public) (MIT).
+- **Most dungeon maps and Jordheim**: the zones library of
+  [Camelot Insider](https://camelotinsider.github.io/zones_library.html).
+- **Atlantis, housing, battlegrounds and a few dungeon plans**: DAoC Cartographe 2.52, freeware by Tixu (2006),
+  recovered from the Wayback Machine.
+- Dark Age of Camelot is a trademark of its owners; the maps are drawn from the game.
 
 ## Development
-Requires Node.js 22.18+.
+
+Requires Node.js 22.18+. Built with Vite, React 19, TypeScript, react-leaflet and Zustand.
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build      # production build into dist/
-npm test           # Vitest
+npm run dev          # http://localhost:3000
+npm test             # Vitest
 npm run lint
-npm run import-dol # regenerate public/data/ from the DOL public database
-npm run import-cartographe # regenerate the Atlantis, housing, battleground tiles and a few dungeon plans
-npm run import-camelotinsider # regenerate the dungeon tiles and Jordheim's drawing
+npm run build        # production build into dist/
 ```
 
-## Deployment
-Every push to `master` is built and published to GitHub Pages by `.github/workflows/deploy.yml`
-(lint, tests, then `npm run build` under the repository's path). Other branches and pull requests run the
-same checks in `.github/workflows/ci.yml`. One-time setup: in the repository's Settings > Pages, set
-Build and deployment > Source to "GitHub Actions".
+The map data and some tiles are generated, then committed:
 
-To test a build under the Pages path locally:
+```bash
+npm run import-dol             # public/data/ from the latest db-public release (~180 MB download, cached in .cache/)
+npm run import-cartographe     # Atlantis, housing, battleground tiles and a few dungeon plans
+npm run import-camelotinsider  # dungeon tiles and Jordheim's drawing
+```
+
+`import-dol` takes `-- --release <n>` for a given release, or `-- --data <dir>` for a local folder of its JSON tables.
+
+## Deployment
+
+Every push to `master` is checked (lint, tests) and published to GitHub Pages by `.github/workflows/deploy.yml`.
+Other branches and pull requests run the same checks in `.github/workflows/ci.yml`.
+One-time setup: in the repository's **Settings → Pages**, set **Source** to **GitHub Actions**.
+
+To try a build under the Pages path locally:
 
 ```bash
 BASE_PATH=/Daoc-Carthography/ npm run build
 BASE_PATH=/Daoc-Carthography/ npx vite preview   # http://localhost:4173/Daoc-Carthography/
 ```
 
-## Data
-The map data in `public/data/` is generated by `scripts/import-dol.ts` from the
-[Eve-of-Darkness/db-public](https://github.com/Eve-of-Darkness/db-public) database (MIT license).
-`npm run import-dol` downloads the latest release (about 180 MB, cached in `.cache/`);
-use `-- --release <n>` for a given release or `-- --data <dir>` for a local folder of its JSON tables.
+## Contributing
 
-The Atlantis, housing and battleground maps, and a few dungeon plans, are built by `scripts/import-cartographe.ts` from
-the maps of DAoC Cartographe 2.52 (freeware by Tixu, 2006), downloaded from the Wayback Machine.
-
-Most dungeon maps and Jordheim's drawing on the Midgard map come from the zones library of
-[Camelot Insider](https://camelotinsider.github.io/zones_library.html) (`npm run import-camelotinsider`).
-
-Stack: Vite, React 19, TypeScript, react-leaflet, Zustand.
-
-## 👏 Contributing
-More to come soon
+Suggestions and pull requests are welcome: open an issue for a missing map, a wrong position or a feature idea.
+Ideas on the list: mob drops, merchant inventories, quests, mob colors relative to your level,
+and importing a freeshard's own database.
 
 ## License
-The Expo source code is made available under the [MIT license](LICENSE).
+
+The source code is available under the [MIT license](LICENSE).
 
 ## Donation
+
 Donations are welcome and will go towards further development of this project.
 
     BTC: bc1qg3dg84fh0qv7acax9c0txtsdasy33ga5jn0gd4
